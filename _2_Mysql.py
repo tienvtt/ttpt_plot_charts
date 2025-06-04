@@ -930,5 +930,15 @@ class database():
 
 		# APPEND HEADER AND BODY
 		return np.append(headers, body_arr, axis=0) if with_headers else body_arr
+	
+
+mysql_database_dict = {
+    "user": "root",
+    "password": "07072068",
+    "host": "localhost",
+    "port": "3306",
+    "db": "ttpt",
+    "schema": None,
+}
 				
 db = database(mysql_database_dict['db'], mysql_database_dict['host'])

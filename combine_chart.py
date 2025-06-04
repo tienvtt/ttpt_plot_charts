@@ -1,5 +1,5 @@
 from _3_Data_Macro import *
-"""trục y thứ 2 là"""
+
 color_dict_vdsc = {
     "black": (40, 40, 40),
     "white": (255, 255, 255),
@@ -23,7 +23,7 @@ class combinechart:
         self.timeframe = timeframe.lower()
         self.title = title
         self.data_list = []
-        self.color_index = 0  # Track color assignments
+        self.color_index = 0  
 
     def _get_color(self):
         # Use colors from color_dict_vdsc in order
@@ -170,7 +170,7 @@ class combinechart:
 
         plt.setp(ax.get_xticklabels(), rotation=45, ha="right")
 
-    def plot(self, save_path="./combine_img"):
+    def plot(self, save_path="None"):
         if not self.data_list:
             raise ValueError("Chưa có dữ liệu để vẽ.")
 
@@ -215,27 +215,191 @@ class combinechart:
 
         fig.tight_layout()
         # Save
+        saved_path = None
         if save_path is not None:
-            if not os.path.exists(save_path):
-                os.makedirs(save_path)
-            filename = datetime.now().strftime("chart_%Y%m%d_%H%M%S.jpg")
-            full_path = os.path.join(save_path, filename)
-            fig.savefig(full_path, dpi=300, bbox_inches="tight")
-            print(f"Hình ảnh đã được lưu tại {full_path}")
+            # Nếu save_path là thư mục (folder)
+            if os.path.isdir(save_path) or not os.path.splitext(save_path)[1]:
+                if not os.path.exists(save_path):
+                    os.makedirs(save_path)
+                filename = datetime.now().strftime("chart_%Y%m%d_%H%M%S.jpg")
+                saved_path = os.path.join(save_path, filename)
+            else:
+                # Nếu save_path là file cụ thể
+                saved_path = save_path
 
-        plt.tight_layout()
-        plt.show()
+            fig.savefig(saved_path, dpi=300, bbox_inches="tight")
+            print(f"Hình ảnh đã được lưu tại {saved_path}")
+
+        plt.close(fig)
+
+        return saved_path
+
+    def plot_bar(self, save_path="None"):
+        if not self.data_list:
+            raise ValueError("Chưa có dữ liệu để vẽ.")
+
+        fig, host = plt.subplots(figsize=(12, 6)) 
+        fig.subplots_adjust(right=0.75)  
+        host.set_title(self.title + " (Bar Chart)")
+
+        host.spines["left"].set_visible(False) 
+        host.yaxis.set_visible(False)
+
+        plotted_axes = []  
+        num_series_to_plot = len(self.data_list)
+
+        all_dates_from_valid_dfs = [
+            data_item["df"]["Date"] for data_item in self.data_list
+        ]
+        concatenated_dates = pd.concat(all_dates_from_valid_dfs)
+        all_unique_sorted_dates = sorted(concatenated_dates.unique())
+
+        min_interval_days = 1.0  # 
+        if len(all_unique_sorted_dates) > 1:
+            numeric_dates = mdates.date2num(all_unique_sorted_dates)
+            diffs = np.diff(numeric_dates)
+            positive_diffs = diffs[diffs > 0]  # 
+            if len(positive_diffs) > 0:
+                min_interval_days = np.min(positive_diffs)
+            else:  
+                if self.timeframe == "daily":
+                    min_interval_days = 1.0
+                elif self.timeframe == "monthly":
+                    min_interval_days = 25.0
+                elif self.timeframe == "quarterly":
+                    min_interval_days = 75.0
+                elif self.timeframe == "yearly":
+                    min_interval_days = 300.0
+        elif len(all_unique_sorted_dates) == 1: 
+            if self.timeframe == "daily":
+                min_interval_days = 1.0
+            elif self.timeframe == "monthly":
+                min_interval_days = 25.0  
+            elif self.timeframe == "quarterly":
+                min_interval_days = 75.0
+            elif self.timeframe == "yearly":
+                min_interval_days = 300.0  
+        
+        bar_group_total_width_data_units = (
+            min_interval_days * 0.8
+        )  #
+        individual_bar_width_data_units = (
+            bar_group_total_width_data_units / num_series_to_plot
+        )
+
+        for series_idx, data_item in enumerate(self.data_list):
+            df = data_item["df"]
+            ax = host.twinx()  # Create a new y-axis for this series
+
+            if len(plotted_axes) > 0:
+                ax.spines["right"].set_position(("axes", 1 + 0.1 * len(plotted_axes)))
+
+            color = self._resolve_color(data_item["color"])
+            x_numeric = mdates.date2num(
+                df["Date"]
+            )  # Convert dates to numbers for positioning
 
 
-print(
-    combinechart(
-        "Y2022",
-        "Y2024",
-        timeframe="yearly",
-        title="Biểu đồ Giá cổ phiếu VCB vs TCB từng năm",
-    )
-    .add_stock("VCB")
-    .add_stock("TCB")
-    .plot()
-)
-print(combinechart("Y2023", "Y2024", timeframe="quarterly", title="Biểu đồ Giá cổ phiếu VCB vs TCB từng quý").add_stock("VCB").add_stock("TCB").plot())
+            offset = (
+                series_idx - (num_series_to_plot - 1) / 2.0
+            ) * individual_bar_width_data_units
+
+            # Plot bars for the current series
+            ax.bar(
+                x_numeric + offset,  # Apply offset to x-positions
+                df["Value"],
+                width=individual_bar_width_data_units
+                * 0.95,  # Bar width (slightly less for small gap)
+                color=color,
+                label=data_item["label"],
+            )
+
+            ax.tick_params(axis="y", labelcolor=color)  # Style y-axis ticks
+            ax.set_ylabel(data_item["label"], color=color)  # Set y-axis label
+            ax.spines["right"].set_color(color)  # Color the y-axis spine
+            ax.set_ylim(bottom=0)  # Bar charts typically start y-axis at 0
+
+            plotted_axes.append(ax)
+
+        if not plotted_axes:  # Should not happen if valid_data_list was not empty
+            print("No data was plotted for the bar chart.")
+            plt.close(fig)
+            return None
+
+        self._setup_xaxis(host)  # Configure the shared x-axis
+
+        # Set x-axis limits to provide some padding around the bars
+        if all_unique_sorted_dates:
+            # Padding based on half of the minimum interval, or at least 0.5 data units (days)
+            padding_x = max(min_interval_days * 0.5, 0.5)
+            host.set_xlim(
+                mdates.date2num(all_unique_sorted_dates[0]) - padding_x,
+                mdates.date2num(all_unique_sorted_dates[-1]) + padding_x,
+            )
+
+        # Add legend if there are few enough series
+        if len(plotted_axes) <= 5 and len(plotted_axes) > 0:
+            lines, labels = [], []
+            for ax_k in plotted_axes:  # Get legend items from plotted axes
+                lns, lbls = ax_k.get_legend_handles_labels()
+                lines.extend(lns)
+                labels.extend(lbls)
+            if lines and labels:  # Check if legend items were successfully gathered
+                host.legend(lines, labels, loc="upper left")
+
+        fig.tight_layout()  
+        saved_path_full = None
+        if save_path is not None and str(save_path).lower() != "none":
+            # Determine if save_path is a directory or a full file path
+            path_is_dir = os.path.isdir(save_path) or (
+                not os.path.splitext(save_path)[1] and not os.path.exists(save_path)
+            )
+
+            if path_is_dir:  
+                if not os.path.exists(save_path):
+                    os.makedirs(save_path)
+                
+                safe_title = (
+                    "".join(
+                        c if c.isalnum() or c in (" ", "_") else "_" for c in self.title
+                    )
+                    .rstrip()
+                    .replace(" ", "_")
+                )
+                safe_title = (
+                    safe_title if safe_title else "barchart"
+                )  
+                filename = (
+                    f"{safe_title}_bar_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
+                )
+                saved_path_full = os.path.join(save_path, filename)
+            else:  
+                saved_path_full = save_path
+                
+                dir_name = os.path.dirname(saved_path_full)
+                if dir_name and not os.path.exists(dir_name):
+                    os.makedirs(dir_name)
+
+            try:
+                fig.savefig(saved_path_full, dpi=300, bbox_inches="tight")
+                print(f"Hình ảnh biểu đồ cột đã được lưu tại {saved_path_full}")
+            except Exception as e:
+                print(f"Lỗi khi lưu biểu đồ cột: {e}")
+                saved_path_full = None  # Indicate failure
+
+        plt.close(fig)  # Close the figure to free memory
+        return saved_path_full
+
+
+# combinechart(
+#         "Y2022",
+#         "Y2024",
+#         timeframe="yearly",
+#         title="Biểu đồ Giá cổ phiếu VCB vs TCB từng năm").add_stock("VCB").add_stock("TCB").plot(save_path="./combine_img")
+
+# combinechart(
+#     "Y2022",
+#     "Y2024",
+#     timeframe="yearly",
+#     title="Biểu đồ Giá cổ phiếu VCB vs TCB từng năm",
+# ).add_stock("VCB").add_stock("TCB").plot_bar(save_path="./combine_img")
