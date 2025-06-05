@@ -390,13 +390,6 @@ class combinechart:
         plt.close(fig)  # Close the figure to free memory
         return saved_path_full
 
-
-# combinechart(
-#         "Y2022",
-#         "Y2024",
-#         timeframe="yearly",
-#         title="Biểu đồ Giá cổ phiếu VCB vs TCB từng năm").add_stock("VCB").add_stock("TCB").plot(save_path="./combine_img")
-
 # combinechart(
 #     "Y2022",
 #     "Y2024",
