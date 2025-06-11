@@ -43,7 +43,7 @@ def stretch(data_arr, method="last"):
         for code in sorted(grouped):
             values = grouped[code]
             if method == "average":
-                agg_value = mean(values)
+                agg_value = statistics.mean(values)
             elif method == "sum":
                 agg_value = sum(values)
             elif method == "last":
@@ -88,7 +88,6 @@ def stretch(data_arr, method="last"):
 
     return result
 
-
 class stockprice:
     def __init__(self, from_macro=None, to_macro=None):
         self.from_macro = from_macro
@@ -96,6 +95,7 @@ class stockprice:
 
     # determine prefix of input time
     def _parse_macro(self, macro, end=False):
+        
         if not macro:
             return None
         prefix = macro[0]
@@ -191,29 +191,6 @@ class stockprice:
                             method or self.stretch_method,
                         )
 
-                    # def visualize(self, chart_type="candlestick"):
-                    #     df = pd.DataFrame(
-                    #         self._format_to_daily(self._filter_candles()),
-                    #         columns=["Date", "Open", "High", "Low", "Close", "Volume"],
-                    #     )
-                    #     df["Date"] = pd.to_datetime(df["Date"], format="D%Y_%m_%d")
-                    #     df.set_index("Date", inplace=True)
-                    #     if chart_type == "line":
-                    #         df["Close"].plot(
-                    #             figsize=(15, 6), title="VNINDEX Close Price", grid=True
-                    #         )
-                    #     else:
-                    #         mpf.plot(
-                    #             df,
-                    #             type="candle",
-                    #             style="charles",
-                    #             title="VNINDEX Candlestick Chart",
-                    #             volume=True,
-                    #             mav=(5, 10),
-                    #             figratio=(12, 6),
-                    #         )
-                    #     plt.show()
-
                 return vnindex()
 
             def stock(self, symbol):
@@ -274,47 +251,9 @@ class stockprice:
                             self.stretch_method,
                         )
 
-                    def visualize(self, chart_type="candlestick"):
-                        if not self.candles:
-                            print(f"Không có dữ liệu cho mã {self.symbol}")
-                            return
-                        df = pd.DataFrame(
-                            self._format_to_daily(self._filter_candles()),
-                            columns=["Date", "Open", "High", "Low", "Close", "Volume"],
-                        )
-                        df["Date"] = pd.to_datetime(df["Date"], format="D%Y_%m_%d")
-                        df.set_index("Date", inplace=True)
-                        if chart_type == "line":
-                            df["Close"].plot(
-                                figsize=(15, 6),
-                                title=f"{self.symbol} Close Price",
-                                grid=True,
-                            )
-                        else:
-                            mpf.plot(
-                                df,
-                                type="candle",
-                                style="charles",
-                                title=f"{self.symbol} Candlestick Chart",
-                                volume=True,
-                                mav=(5, 10),
-                                figratio=(12, 6),
-                            )
-                        plt.show()
-
                 return stock()
 
         return market()
-
-# print(
-#     stockprice("M2024_04").market()
-#     .stock(
-#         "FPT"
-#     )
-#     .get_data_arr()
-# )
-# print(stockprice("M2024_04").market().stock("FPT").stretch())
-
 
 class finance:
     def __init__(self, from_macro=None, to_macro=None):
@@ -439,7 +378,634 @@ class finance:
                 )
         return interbank_rate(rate_type)
 
-# print(finance("Y2025").interbank_rate("1M").stretch())
+    def reverse_repo(self, repo_type):
+        fin = self
+        class reverse_repo(fin.Inner):
+            def __init__(self, repo_type):
+                self.repo_type = repo_type
+                self.from_macro= fin.from_macro
+                self.to_macro = fin.to_macro
+                self.type_mapping = {
+                    "LH": "KL lưu hành Reverse Repo",
+                    "PH": "KL phát hành Reverse Repo",
+                    "ĐH": "KL đáo hạn Reverse Repo"
+                }
+                self.from_date = fin._parse_macro(self.from_macro)
+                self.to_date = fin._parse_macro(self.to_macro, end = True)
+                self.stretch_method = "average"
+                self.data_arr = self._load_data(self.repo_type)
+
+            def _load_data(self, repo_type):
+                repo_field = self.type_mapping.get(repo_type)
+                if not repo_field:
+                    raise ValueError(f"{repo_type} không hợp lệ.")
+
+                records = db.importing_objs("FINANCE", data_name="reverse_repo")
+                if len(records) == 0:
+                    return []
+
+                result = []
+                for record in records:
+                    time_code = record.time_code
+                    data_dict = record.data_dict
+                    repo_info = data_dict.get(repo_field)
+
+                    if repo_info and "data" in repo_info:
+                        result.append([time_code, repo_info["data"]])
+
+                return result
+
+            def _filter_data(self):
+                result = []
+                for row in self.data_arr:
+                    try:
+                        dt = datetime.strptime(row[0], "D%Y_%m_%d")
+                        if (not self.from_date or dt >= self.from_date) and (
+                            not self.to_date or dt <= self.to_date
+                        ):
+                            result.append([dt, row[1]])
+                    except:
+                        continue
+                return result
+
+            def _format_to_daily(self, data):
+                result = []
+                for item in data:
+                    try: 
+                        date_str = item[0].strftime("D%Y_%m_%d")
+                        result.append([date_str, item[1]])
+                    except:
+                        continue
+                return result
+
+            def get_data_arr(self):
+                filtered = self._filter_data()
+                return self._format_to_daily(filtered)
+
+            def stretch(self, method = None):
+                return stretch(
+                    self.get_data_arr(),
+                    method or self.stretch_method,
+                )
+        return reverse_repo(repo_type)
+
+    def interbank_vol(self, term):
+        fin = self
+
+        class interbank_vol(fin.Inner):
+            def __init__(self, term):
+                self.term = term
+                self.from_macro = fin.from_macro
+                self.to_macro = fin.to_macro
+                self.term_mapping = {
+                    "1M": "Doanh số kỳ hạn 1 tháng",
+                    "1W": "Doanh số kỳ hạn 1 tuần",
+                    "2W": "Doanh số kỳ hạn 2 tuần",
+                    "3M": "Doanh số kỳ hạn 3 tháng",
+                    "6M": "Doanh số kỳ hạn 6 tháng",
+                    "9M": "Doanh số kỳ hạn 9 tháng",
+                    "ON": "Doanh số kỳ hạn qua đêm"
+                }
+                self.from_date = fin._parse_macro(self.from_macro)
+                self.to_date = fin._parse_macro(self.to_macro, end = True)
+                self.stretch_method = "last"
+                self.data_arr = self._load_data(self.term)
+
+            def _load_data(self, term):
+                term_field = self.term_mapping.get(term)
+                if not term_field:
+                    raise ValueError(f"Kỳ hạn không hợp lệ.")
+
+                records = db.importing_objs("FINANCE", data_name = "interbank_vol")
+                if len(records) == 0:
+                    return []
+
+                result = []
+                for record in records:
+                    time_code = record.time_code
+                    data_dict = record.data_dict
+                    term_info = data_dict.get(term_field)
+
+                    if term_info and "data" in term_info:
+                        result.append([time_code, term_info["data"]])
+
+                return result
+
+            def _filter_data(self):
+                result = []
+                for row in self.data_arr:
+                    try:
+                        dt = datetime.strptime(row[0], "D%Y_%m_%d")
+                        if (not self.from_date or dt >= self.from_date) and (
+                            not self.to_date or dt <= self.to_date
+                        ):
+                            result.append([dt, row[1]])
+
+                    except:
+                        continue
+                return result
+
+            def _format_to_daily(self, data):
+                result = []
+                for item in data:
+                    try:
+                        date_str = item[0].strftime("D%Y_%m_%d")
+                        result.append([date_str, item[1]])
+                    except:
+                        continue
+                return result
+
+            def get_data_arr(self):
+                filtered = self._filter_data()
+                return self._format_to_daily(filtered)
+
+            def stretch(self, method=None):
+                return stretch(
+                    self.get_data_arr(),
+                    method or self.stretch_method
+                )
+
+        return interbank_vol(term)
+
+    def sell_outright(self, outright_type):
+        fin = self
+
+        class sell_outright(fin.Inner):
+            def __init__(self, outright_type):
+                self.outright_type = outright_type
+                self.from_macro = fin.from_macro
+                self.to_macro = fin.to_macro
+                self.outright_type_mapping = {
+                    "LH": "KL lưu hành Tín phiếu",
+                    "PH": "KL phát hành Tín phiếu",
+                    "ĐH": "KL đáo hạn Tín phiếu",
+                }
+                self.from_date = fin._parse_macro(self.from_macro)
+                self.to_date = fin._parse_macro(self.to_macro, end = True)
+                self.stretch_method = "last"
+                self.data_arr = self._load_data(self.outright_type)
+
+            def _load_data(self, outright_type):
+                outright_type_field = self.outright_type_mapping.get(outright_type)
+                if not outright_type_field:
+                    raise ValueError(f"KL {outright_type} Tín phiếu không hợp lệ.")
+
+                records = db.importing_objs("FINANCE", data_name = "sell_outright")
+                if len(records) == 0:
+                    return []
+
+                result = []
+                for record in records:
+                    time_code = record.time_code
+                    data_dict = record.data_dict
+                    outright_type_info = data_dict.get("outright_type_field")
+
+                    if outright_type_info and "data" in outright_type_info:
+                        result.append([time_code, outright_type_info["data"]])
+
+                return result
+
+            def _filter_data(self):
+                result = []
+                for row in self.data_arr:
+                    try:
+                        dt = datetime.strptime(row[0], "D%Y_%m_%d")
+                        if (not self.from_date or dt >= self.from_date) and (
+                            not self.to_date or dt <= self.to_date
+                        ):
+                            result.append([dt, row[1]])
+
+                    except:
+                        continue
+
+                return result
+            def _format_to_daily(self, data):
+                result = []
+                for item in data:
+                    try:
+                        date_str = item[0].strftime("D%Y_%m_%d")
+                        result.append([date_str, item[1]])
+                    except:
+                        continue
+                return result
+            def get_data_arr(self):
+                filtered = self._parse_macro(self.from_macro)
+                return self.__format__to_daily(filtered)
+
+            def stretch(self, method = None):
+                return stretch(
+                    self.get_data_arr(),
+                    method or self.stretch_method
+                )
+        return sell_outright(outright_type)
+
+    def borrowing (self, industry):
+        fin = self
+
+        class borrowing(fin.Inner):
+            def __init__(self, industry):
+                self.industry = industry
+                self.from_macro = fin.from_macro
+                self.to_macro = fin.to_macro
+                self.industry_mapping = {
+                    key: key 
+                    for key in [
+                    "Xây dựng",
+                    "Thương mại",
+                    "Vận tải và viễn thông",
+                    "Công nghiệp và xây dựng", 
+                    "Các hoạt động dịch vụ khác",
+                    "TỔNG TÍN DỤNG TRONG NỀN KINH TẾ",
+                    "Nông nghiệp, lâm nghiệp và thuỷ sản",
+                    "Hoạt động thương mại, vận tải và viễn thông"
+                ]
+            }
+                self.from_date = fin._parse_macro(self.from_macro)
+                self.to_date = fin._parse_macro(self.to_macro, end=True)
+                self.stretch_method = "last"
+                self.data_arr = self._load_data(self.industry)
+
+            def _load_data(self, industry):
+                industry_field = self.industry_mapping.get(industry)
+                if not industry_field:
+                    raise ValueError(f"{industry_field} không hợp lệ.")
+
+                records = db.importing_objs("Economy", data_name="gdp_real")
+                if len(records) == 0:
+                    return []
+
+                result = []
+                for record in records:
+                    time_code = record.time_code
+                    data_dict = record.data_dict
+                    industry_info = data_dict.get(industry_field)
+
+                    if industry_info and "data" in industry_info:
+                        result.append([time_code, industry_info["data"]])
+
+                return result
+
+            def _filter_data(self):
+                result = []
+                for row in self.data_arr:
+                    time_code = row[0]
+                    dt = fin._parse_macro(time_code)
+                    if dt and (not self.from_date or dt >= self.from_date) and (not self.to_date or dt <= self.to_date):
+                        result.append(row)
+                return result
+
+            def get_data_arr(self):
+                filtered = self._filter_data()
+                return filtered
+
+            def stretch(self, method=None):
+                return stretch(
+                    self.get_data_arr(),
+                    method or self.stretch_method,
+                )
+
+        return borrowing(industry)  
+
+    def lending(self, lending_type):
+        fin = self
+
+        class lending(fin.Inner):
+            def __init__(self, lending_type):
+                self.lending_type = lending_type
+                self.from_macro = fin.from_macro
+                self.to_macro = fin.to_macro
+                self.lending_type_mapping = {
+                    key: key
+                    for key in [
+                        "Tổng tiền gửi",
+                        "Tiền gửi của TCKT",
+                        "Tiền gửi của dân cư"
+                    ]
+                }
+                self.from_date = fin._parse_macro(self.from_macro)
+                self.to_date = fin._parse_macro(self.to_macro, end=True)
+                self.stretch_method = "last"
+                self.data_arr = self._load_data(self.lending_type)
+
+            def _load_data(self, lending_type):
+                lending_type_field = self.lending_type_mapping.get(lending_type)
+                if not lending_type_field:
+                    raise ValueError(f"{lending_type_field} không hợp lệ.")
+
+                records = db.importing_objs("FINANCE", data_name="lending")
+                if len(records) == 0:
+                    return []
+
+                result = []
+                for record in records:
+                    time_code = record.time_code
+                    data_dict = record.data_dict
+                    lending_type_info = data_dict.get(lending_type_field)
+
+                    if lending_type_info and "data" in lending_type_info:
+                        result.append([time_code, lending_type_info["data"]])
+
+                return result
+
+            def _filter_data(self):
+                result = []
+                for row in self.data_arr:
+                    time_code = row[0]
+                    dt = fin._parse_macro(time_code)
+                    if (
+                        dt
+                        and (not self.from_date or dt >= self.from_date)
+                        and (not self.to_date or dt <= self.to_date)
+                    ):
+                        result.append(row)
+                return result
+
+            def get_data_arr(self):
+                filtered = self._filter_data()
+                return filtered
+
+            def stretch(self, method=None):
+                return stretch(
+                    self.get_data_arr(),
+                    method or self.stretch_method,
+                )
+
+        return lending(lending_type)
+
+    def M2(self, M2_type):
+        fin = self
+
+        class M2(fin.Inner):
+            def __init__(self, M2_type):
+                self.M2_type = M2_type
+                self.from_macro = fin.from_macro
+                self.to_macro = fin.to_macro
+                self.M2_type_mapping = {
+                    "M2": "M2"
+                }
+                self.from_date = fin._parse_macro(self.from_macro)
+                self.to_date = fin._parse_macro(self.to_macro, end=True)
+                self.stretch_method = "last"
+                self.data_arr = self._load_data(self.M2_type)
+
+            def _load_data(self, M2_type):
+                M2_field = self.M2_type_mapping.get(M2_type)
+                if not M2_field:
+                    raise ValueError(f"{M2_type} không hợp lệ.")
+
+                records = db.importing_objs("FINANCE", data_name="M2")
+                if len(records) == 0:
+                    return []
+
+                result = []
+                for record in records:
+                    time_code = record.time_code
+                    data_dict = record.data_dict
+                    M2_type_info = data_dict.get(M2_field)
+
+                    if M2_type_info and "data" in M2_type_info:
+                        result.append([time_code, M2_type_info["data"]])
+
+                return result
+
+            def _filter_data(self):
+                result = []
+                for row in self.data_arr:
+                    time_code = row[0]
+                    dt = fin._parse_macro(time_code)
+                    if (
+                        dt
+                        and (not self.from_date or dt >= self.from_date)
+                        and (not self.to_date or dt <= self.to_date)
+                    ):
+                        result.append(row)
+                return result
+            
+            def get_data_arr(self):
+                filtered = self._filter_data()
+                return filtered
+
+            def stretch(self, method=None):
+                return stretch(
+                    self.get_data_arr(),
+                    method or self.stretch_method,
+                )
+
+        return M2(M2_type)
+
+    def moneysupply(self, moneysupply_type):
+        fin = self
+
+        class moneysupply(fin.Inner):
+            def __init__(self, moneysupply_type):
+                self.moneysupply_type = moneysupply_type
+                self.from_macro = fin.from_macro
+                self.to_macro = fin.to_macro
+                self.moneysupply_type_mapping = {
+                    key: key
+                    for key in [
+                        "Tổng phương tiện thanh toán",
+                        "Tổng phương tiện thanh toán_Tiền gửi của cư dân",
+                        "Tổng phương tiện thanh toán_Tiền gửi của các TCKT",
+                    ]
+                }
+                self.from_date = fin._parse_macro(self.from_macro)
+                self.to_date = fin._parse_macro(self.to_macro, end=True)
+                self.stretch_method = "last"
+                self.data_arr = self._load_data(self.moneysupply_type)
+
+            def _load_data(self, moneysupply_type):
+                moneysupply_type_field = self.moneysupply_type_mapping.get(
+                    moneysupply_type
+                )
+                if not moneysupply_type_field:
+                    raise ValueError(f"{moneysupply_type} không hợp lệ.")
+
+                records = db.importing_objs("FINANCE", data_name="moneysupply")
+                if len(records) == 0:
+                    return []
+
+                result = []
+                for record in records:
+                    time_code = record.time_code
+                    data_dict = record.data_dict
+                    moneysupply_type_info = data_dict.get(moneysupply_type_field)
+
+                    if moneysupply_type_info and "data" in moneysupply_type_info:
+                        result.append([time_code, moneysupply_type_info["data"]])
+
+                return result
+
+            def _filter_data(self):
+                result = []
+                for row in self.data_arr:
+                    time_code = row[0]
+                    dt = fin._parse_macro(time_code)
+                    if (
+                        dt
+                        and (not self.from_date or dt >= self.from_date)
+                        and (not self.to_date or dt <= self.to_date)
+                    ):
+                        result.append(row)
+                return result
+
+            def get_data_arr(self):
+                filtered = self._filter_data()
+                return filtered
+
+            def stretch(self, method=None):
+                return stretch(
+                    self.get_data_arr(),
+                    method or self.stretch_method,
+                )
+
+        return moneysupply(moneysupply_type)
+
+    def loans(self, loans_type):
+        fin = self
+
+        class loans(fin.Inner):
+
+            def __init__(self, loans_type):
+                self.loans_type = loans_type
+                self.from_macro = fin.from_macro
+                self.to_macro = fin.to_macro
+                self.loans_type_mapping = {
+                    key: key
+                    for key in [
+                        "Tổng dư nợ tín dụng",
+                        "Tổng dư nợ tín dụng_Dư nợ tín dụng xây dựng",
+                        "Tổng dư nợ tín dụng_Dư nợ tín dụng các HĐ khác",
+                        "Tổng dư nợ tín dụng_Dư nợ tín dụng công nghiệp",
+                        "Tổng dư nợ tín dụng_Dư nợ tín dụng thương mại",
+                        "Tổng dư nợ tín dụng_Dư nợ tín dụng nông, lâm, thủy sản",
+                        "Tổng dư nợ tín dụng_Dư nợ tín dụng vận tải và viễn thông",
+                        "Tổng dư nợ tín dụng_Dư nợ tín dụng công nghiệp và xây dựng",
+                        "Tổng dư nợ tín dụng_Dư nợ tín dụng thương mại, vận tải, viễn thông"
+                    ]
+                }
+                self.from_date = fin._parse_macro(self.from_macro)
+                self.to_date = fin._parse_macro(self.to_macro, end=True)
+                self.stretch_method = "last"
+                self.data_arr = self._load_data(self.loans_type)
+
+            def _load_data(self, loans_type):
+                loans_type_field = self.loans_type_mapping.get(
+                    loans_type
+                )
+                if not loans_type_field:
+                    raise ValueError(f"{loans_type} không hợp lệ.")
+
+                records = db.importing_objs("FINANCE", data_name="loans")
+                if len(records) == 0:
+                    return []
+
+                result = []
+                for record in records:
+                    time_code = record.time_code
+                    data_dict = record.data_dict
+                    loans_type_info = data_dict.get(loans_type_field)
+
+                    if loans_type_info and "data" in loans_type_info:
+                        result.append([time_code, loans_type_info["data"]])
+
+                return result
+
+            def _filter_data(self):
+                result = []
+                for row in self.data_arr:
+                    time_code = row[0]
+                    dt = fin._parse_macro(time_code)
+                    if (
+                        dt
+                        and (not self.from_date or dt >= self.from_date)
+                        and (not self.to_date or dt <= self.to_date)
+                    ):
+                        result.append(row)
+                return result
+
+            def get_data_arr(self):
+                filtered = self._filter_data()
+                return filtered
+
+            def stretch(self, method=None):
+                return stretch(
+                    self.get_data_arr(),
+                    method or self.stretch_method,
+                )
+
+        return loans(loans_type)
+
+    def securities_account(self, account_type):
+        fin = self
+
+        class securities_account(fin.Inner):
+
+            def __init__(self, account_type):
+                self.account_type = account_type
+                self.from_macro = fin.from_macro
+                self.to_macro = fin.to_macro
+                self.account_type_mapping = {
+                    key: key
+                    for key in [
+                        "Tổng số tài khoản trong nước", 
+                        "Tổng số tài khoản chứng khoán",
+                        "Tổng số tài khoản nước ngoài",
+                        "Số tài khoản cá nhân trong nước",
+                        "Số tài khoản cá nhân nước ngoài",
+                        "Số tài khoản tổ chức trong nước",
+                        "Số tài khoản tổ chức nước ngoài"
+                    ]
+                }
+                self.from_date = fin._parse_macro(self.from_macro)
+                self.to_date = fin._parse_macro(self.to_macro, end=True)
+                self.stretch_method = "last"
+                self.data_arr = self._load_data(self.account_type)
+
+            def _load_data(self, account_type):
+                account_type_field = self.account_type_mapping.get(account_type)
+                if not account_type_field:
+                    raise ValueError(f"{account_type} không hợp lệ.")
+
+                records = db.importing_objs("FINANCE", data_name="securities_account")
+                if len(records) == 0:
+                    return []
+
+                result = []
+                for record in records:
+                    time_code = record.time_code
+                    data_dict = record.data_dict
+                    account_type_info = data_dict.get(account_type_field)
+
+                    if account_type_info and "data" in account_type_info:
+                        result.append([time_code, account_type_info["data"]])
+
+                return result
+
+            def _filter_data(self):
+                result = []
+                for row in self.data_arr:
+                    time_code = row[0]
+                    dt = fin._parse_macro(time_code)
+                    if (
+                        dt
+                        and (not self.from_date or dt >= self.from_date)
+                        and (not self.to_date or dt <= self.to_date)
+                    ):
+                        result.append(row)
+                return result
+
+            def get_data_arr(self):
+                filtered = self._filter_data()
+                return filtered
+
+            def stretch(self, method=None):
+                return stretch(
+                    self.get_data_arr(),
+                    method or self.stretch_method,
+                )
+
+        return securities_account(account_type)
 
 
 class economy:
@@ -594,17 +1160,6 @@ class economy:
                         result.append(row)
                 return result
                     
-
-            # def _format_to_daily(self, data):
-            #     result = []
-            #     for item in data:
-            #         try:
-            #             date_str = item[0].strftime("D%Y_%m_%d")
-            #             result.append([date_str, item[1]])
-            #         except:
-            #             continue
-            #     return result
-
             def get_data_arr(self):
                 filtered = self._filter_data()
                 return filtered
@@ -615,19 +1170,7 @@ class economy:
                     method or self.stretch_method,
                 )
 
-            # def visualize(self):
-            #     df = pd.DataFrame(self.get_data_arr(), columns=["Date", "Value"])
-            #     df["Date"] = pd.to_datetime(df["Date"], format="D%Y_%m_%d")
-            #     df.set_index("Date", inplace=True)
-            #     df["Value"].plot(
-            #         figsize=(15, 6),
-            #         title=f"Interbank Rate - {self.rate_type}",
-            #         grid=True,
-            #     )
-            #     plt.show()
-
         return gdp_real(gdp)
-
 
 class foreign():
 	def __init__(self, macro):
@@ -654,29 +1197,3 @@ class government():
     # print(stockprice('M2025_04').market().stock('vnindex').get_data_arr())
 
     # print(economy("M2020_04", "M2022_05").gdp_real("Tổng GDP_value").get_data_arr())
-
-
-# print(
-#     economy("Q2020_04")
-#     .gdp_real(
-#         "Tổng GDP_Dịch vụ_Hoạt động làm thuê các công việc trong các hộ gia đình, sản xuất sản phẩm vật chất và dịch vụ tự tiêu dùng của hộ gia đình_value"
-#     )
-#     .stretch()
-# )
-
-
-# print(
-#     economy("Y2020")
-#     .gdp_real(
-#         "Tổng GDP_Dịch vụ_Hoạt động làm thuê các công việc trong các hộ gia đình, sản xuất sản phẩm vật chất và dịch vụ tự tiêu dùng của hộ gia đình_value"
-#     )
-#     .stretch()
-# )
-
-# print(
-#     economy("Y2020")
-#     .gdp_real(
-#         "Tổng GDP_Dịch vụ_Hoạt động làm thuê các công việc trong các hộ gia đình, sản xuất sản phẩm vật chất và dịch vụ tự tiêu dùng của hộ gia đình_value"
-#     )
-#     .get_data_arr()
-# )
