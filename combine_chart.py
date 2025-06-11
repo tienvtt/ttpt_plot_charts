@@ -11,22 +11,21 @@ color_dict_vdsc = {
     "light_yellow": (237, 229, 151),
 }
 
+
 def rgb_to_mpl(rgb):
     return tuple(c / 255 for c in rgb)
 
+
 class combinechart:
-    def __init__(
-        self, from_macro=None, to_macro=None, timeframe="daily", title=""
-    ):
+    def __init__(self, from_macro=None, to_macro=None, timeframe="daily", title=""):
         self.from_macro = from_macro
         self.to_macro = to_macro
         self.timeframe = timeframe.lower()
         self.title = title
         self.data_list = []
-        self.color_index = 0  
+        self.color_index = 0
 
     def _get_color(self):
-        # Use colors from color_dict_vdsc in order
         colors = list(color_dict_vdsc.keys())
         colors = [
             c for c in colors if c not in ["white", "black", "grey"]
@@ -89,7 +88,7 @@ class combinechart:
         elif self.timeframe == "quarterly":
 
             def convert_quarter(q_str):
-                year, q = q_str.replace("Q", "").split("_0")
+                year, q = q_str.replace("Q", "").split("_")
                 return datetime(int(year), 3 * int(q) - 2, 1)
 
             df["Date"] = df["Date"].apply(convert_quarter)
@@ -130,6 +129,114 @@ class combinechart:
             {
                 "df": df,
                 "label": label or f"Lãi suất {tenor}",
+                "color": color,
+            }
+        )
+        return self
+
+    def add_reverse_repo(self, repo_type, label=None, color=None):
+        data = finance(self.from_macro).reverse_repo(repo_type).stretch()
+        df = self._convert_to_df(data)
+        self.data_list.append(
+            {
+                "df": df,
+                "label": label or f"KL {repo_type} Reverse Repo",
+                "color": color,
+            }
+        )
+        return self
+
+    def add_interbank_vol(self, term, label=None, color=None):
+        data = finance(self.from_macro).interbank_vol(term).stretch()
+        df = self._convert_to_df(data)
+        self.data_list.append(
+            {
+                "df": df,
+                "label": label or f"Doanh số kỳ hạn {term}",
+                "color": color,
+            }
+        )
+        return self
+
+    def add_sell_outright(self, outright_type, label=None, color=None):
+        data = finance(self.from_macro).sell_outright(outright_type).stretch()
+        df = self._convert_to_df(data)
+        self.data_list.append(
+            {
+                "df": df,
+                "label": label or f"KL {outright_type} Tín phiếu",
+                "color": color,
+            }
+        )
+        return self
+
+    def add_borrowing(self, industry, label=None, color=None):
+        data = finance(self.from_macro).borrowing(industry).stretch()
+        df = self._convert_to_df(data)
+        self.data_list.append(
+            {
+                "df": df,
+                "label": label or f"{industry}",
+                "color": color,
+            }
+        )
+        return self
+
+    def add_lending(self, lending_type, label=None, color=None):
+        data = finance(self.from_macro).lending(lending_type).stretch()
+        df = self._convert_to_df(data)
+        self.data_list.append(
+            {
+                "df": df,
+                "label": label or f"{lending_type}",
+                "color": color,
+            }
+        )
+        return self
+
+    def add_M2(self, M2_type, label=None, color=None):
+        data = finance(self.from_macro).M2(M2_type).stretch()
+        df = self._convert_to_df(data)
+        self.data_list.append(
+            {
+                "df": df,
+                "label": label or f"{M2_type}",
+                "color": color,
+            }
+        )
+        return self
+
+    def add_moneysupply(self, moneysupply_type, label=None, color=None):
+        data = finance(self.from_macro).moneysupply(moneysupply_type).stretch()
+        df = self._convert_to_df(data)
+        self.data_list.append(
+            {
+                "df": df,
+                "label": label or f"{moneysupply_type}",
+                "color": color,
+            }
+        )
+        return self
+
+    def add_loans(self, loans_type, label=None, color=None):
+        data = finance(self.from_macro).loans(loans_type).stretch()
+        df = self._convert_to_df(data)
+        self.data_list.append(
+            {
+                "df": df,
+                "label": label or f"{loans_type}",
+                "color": color,
+            }
+        )
+        return self
+
+    def add_securities_account(self, account_type, label=None, color=None):
+        data = finance(self.from_macro).securities_account(account_type).stretch()
+        df = self._convert_to_df(data)
+        self.data_list.append(
+            {
+                "df": df,
+                "label": label or f"{account_type}",
                 "color": color,
             }
         )
@@ -238,14 +345,14 @@ class combinechart:
         if not self.data_list:
             raise ValueError("Chưa có dữ liệu để vẽ.")
 
-        fig, host = plt.subplots(figsize=(12, 6)) 
-        fig.subplots_adjust(right=0.75)  
-        host.set_title(self.title + " (Bar Chart)")
+        fig, host = plt.subplots(figsize=(12, 6))
+        fig.subplots_adjust(right=0.75)
+        host.set_title(self.title)
 
-        host.spines["left"].set_visible(False) 
+        host.spines["left"].set_visible(False)
         host.yaxis.set_visible(False)
 
-        plotted_axes = []  
+        plotted_axes = []
         num_series_to_plot = len(self.data_list)
 
         all_dates_from_valid_dfs = [
@@ -254,14 +361,14 @@ class combinechart:
         concatenated_dates = pd.concat(all_dates_from_valid_dfs)
         all_unique_sorted_dates = sorted(concatenated_dates.unique())
 
-        min_interval_days = 1.0  # 
+        min_interval_days = 1.0  #
         if len(all_unique_sorted_dates) > 1:
             numeric_dates = mdates.date2num(all_unique_sorted_dates)
             diffs = np.diff(numeric_dates)
-            positive_diffs = diffs[diffs > 0]  # 
+            positive_diffs = diffs[diffs > 0]  #
             if len(positive_diffs) > 0:
                 min_interval_days = np.min(positive_diffs)
-            else:  
+            else:
                 if self.timeframe == "daily":
                     min_interval_days = 1.0
                 elif self.timeframe == "monthly":
@@ -270,19 +377,17 @@ class combinechart:
                     min_interval_days = 75.0
                 elif self.timeframe == "yearly":
                     min_interval_days = 300.0
-        elif len(all_unique_sorted_dates) == 1: 
+        elif len(all_unique_sorted_dates) == 1:
             if self.timeframe == "daily":
                 min_interval_days = 1.0
             elif self.timeframe == "monthly":
-                min_interval_days = 25.0  
+                min_interval_days = 25.0
             elif self.timeframe == "quarterly":
                 min_interval_days = 75.0
             elif self.timeframe == "yearly":
-                min_interval_days = 300.0  
-        
-        bar_group_total_width_data_units = (
-            min_interval_days * 0.8
-        )  #
+                min_interval_days = 300.0
+
+        bar_group_total_width_data_units = min_interval_days * 0.8  #
         individual_bar_width_data_units = (
             bar_group_total_width_data_units / num_series_to_plot
         )
@@ -298,7 +403,6 @@ class combinechart:
             x_numeric = mdates.date2num(
                 df["Date"]
             )  # Convert dates to numbers for positioning
-
 
             offset = (
                 series_idx - (num_series_to_plot - 1) / 2.0
@@ -347,7 +451,7 @@ class combinechart:
             if lines and labels:  # Check if legend items were successfully gathered
                 host.legend(lines, labels, loc="upper left")
 
-        fig.tight_layout()  
+        fig.tight_layout()
         saved_path_full = None
         if save_path is not None and str(save_path).lower() != "none":
             # Determine if save_path is a directory or a full file path
@@ -355,10 +459,10 @@ class combinechart:
                 not os.path.splitext(save_path)[1] and not os.path.exists(save_path)
             )
 
-            if path_is_dir:  
+            if path_is_dir:
                 if not os.path.exists(save_path):
                     os.makedirs(save_path)
-                
+
                 safe_title = (
                     "".join(
                         c if c.isalnum() or c in (" ", "_") else "_" for c in self.title
@@ -366,16 +470,14 @@ class combinechart:
                     .rstrip()
                     .replace(" ", "_")
                 )
-                safe_title = (
-                    safe_title if safe_title else "barchart"
-                )  
+                safe_title = safe_title if safe_title else "barchart"
                 filename = (
                     f"{safe_title}_bar_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
                 )
                 saved_path_full = os.path.join(save_path, filename)
-            else:  
+            else:
                 saved_path_full = save_path
-                
+
                 dir_name = os.path.dirname(saved_path_full)
                 if dir_name and not os.path.exists(dir_name):
                     os.makedirs(dir_name)
@@ -390,9 +492,11 @@ class combinechart:
         plt.close(fig)  # Close the figure to free memory
         return saved_path_full
 
-# combinechart(
-#     "Y2022",
-#     "Y2024",
-#     timeframe="yearly",
-#     title="Biểu đồ Giá cổ phiếu VCB vs TCB từng năm",
-# ).add_stock("VCB").add_stock("TCB").plot_bar(save_path="./combine_img")
+combinechart(
+    "M2022_01",
+    "M2024_01",
+    timeframe="monthly",
+    title="Biểu đồ Giá cổ phiếu VCB vs",
+).add_stock("VCB").add_borrowing("Vận tải và viễn thông").plot(
+    save_path="./combine_img"
+)
