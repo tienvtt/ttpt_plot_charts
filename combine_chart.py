@@ -15,7 +15,6 @@ color_dict_vdsc = {
 def rgb_to_mpl(rgb):
     return tuple(c / 255 for c in rgb)
 
-
 class combinechart:
     def __init__(self, from_macro=None, to_macro=None, timeframe="daily", title=""):
         self.from_macro = from_macro
@@ -110,6 +109,18 @@ class combinechart:
             return rgb_to_mpl(color_dict_vdsc[color_key])
         return self._get_color()
 
+    def _add_series(self, data_func, key, label=None, color=None, default_label_prefix=""):
+        data = data_func(key).stretch()
+        df = self._convert_to_df(data)
+        self.data_list.append(
+            {
+                "df": df,
+                "label": label or f"{default_label_prefix}{key}",
+                "color": color,
+            }
+        )
+        return self
+
     def add_stock(self, stock_code, label=None, color=None):
         data = stockprice(self.from_macro).market().stock(stock_code).stretch()
         df = self._convert_to_df(data)
@@ -121,6 +132,8 @@ class combinechart:
             }
         )
         return self
+
+    """-------------------FINANCE---------------------"""
 
     def add_interbank_rate(self, tenor, label=None, color=None):
         data = finance(self.from_macro).interbank_rate(tenor).stretch()
@@ -242,6 +255,104 @@ class combinechart:
         )
         return self
 
+    """-------------------ECONOMY---------------------"""
+
+    def add_passenger_transport(self, transport_type, label=None, color=None):
+        data = economy(self.from_macro).passenger_transport(transport_type).stretch()
+        df = self._convert_to_df(data)
+        self.data_list.append(
+            {
+                "df": df,
+                "label": label or transport_type,
+                "color": color,
+            }
+        )
+        return self
+
+    def add_retail_revenue_acc_raw(self, revenue_type, label=None, color=None):
+        data = economy(self.from_macro).retail_revenue_acc_raw(revenue_type).stretch()
+        df = self._convert_to_df(data)
+        self.data_list.append(
+            {
+                "df": df,
+                "label": label or revenue_type,
+                "color": color,
+            }
+        )
+        return self
+
+    def add_retail_revenue_acc_yoy(self, revenue_type, label=None, color=None):
+        data = economy(self.from_macro).retail_revenue_acc_yoy(revenue_type).stretch()
+        df = self._convert_to_df(data)
+        self.data_list.append(
+            {
+                "df": df,
+                "label": label or revenue_type,
+                "color": color,
+            }
+        )
+        return self
+
+    def add_retail_revenue_raw(self, revenue_type, label=None, color=None):
+        data = economy(self.from_macro).retail_revenue_raw(revenue_type).stretch()
+        df = self._convert_to_df(data)
+        self.data_list.append(
+            {
+                "df": df,
+                "label": label or revenue_type,
+                "color": color,
+            }
+        )
+        return self
+
+    def add_retail_revenue_yoy(self, revenue_type, label=None, color=None):
+        data = economy(self.from_macro).retail_revenue_yoy(revenue_type).stretch()
+        df = self._convert_to_df(data)
+        self.data_list.append(
+            {
+                "df": df,
+                "label": label or revenue_type,
+                "color": color,
+            }
+        )
+        return self
+
+    def add_cpi(self, cpi_type, label=None, color=None):
+        data = economy(self.from_macro).cpi(cpi_type).stretch()
+        df = self._convert_to_df(data)
+        self.data_list.append(
+            {
+                "df": df,
+                "label": label or cpi_type,
+                "color": color,
+            }
+        )
+        return self
+
+    def add_cpi_mom(self, cpi_type, label=None, color=None):
+        data = economy(self.from_macro).cpi_mom(cpi_type).stretch()
+        df = self._convert_to_df(data)
+        self.data_list.append(
+            {
+                "df": df,
+                "label": label or f"{cpi_type} MoM",
+                "color": color,
+            }
+        )
+        return self
+
+    def add_cpi_yoy(self, cpi_type, label=None, color=None):
+        data = economy(self.from_macro).cpi_yoy(cpi_type).stretch()
+        df = self._convert_to_df(data)
+        self.data_list.append(
+            {
+                "df": df,
+                "label": label or f"{cpi_type} YoY",
+                "color": color,
+            }
+        )
+        return self
+
     def add_gdp_real(self, gdp, label=None, color=None):
         data = economy(self.from_macro).gdp_real(gdp).stretch()
         df = self._convert_to_df(data)
@@ -253,6 +364,288 @@ class combinechart:
             }
         )
         return self
+
+    def add_gdp_real_raw(self, gdp, label=None, color=None):
+        data = economy(self.from_macro).gdp_real_raw(gdp).stretch()
+        df = self._convert_to_df(data)
+        self.data_list.append(
+            {
+                "df": df,
+                "label": label or gdp,
+                "color": color,
+            }
+        )
+        return self
+
+    def add_gdp_real_yoy(self, gdp, label=None, color=None):
+        data = economy(self.from_macro).gdp_real_yoy(gdp).stretch()
+        df = self._convert_to_df(data)
+        self.data_list.append(
+            {
+                "df": df,
+                "label": label or gdp,
+                "color": color,
+            }
+        )
+        return self
+
+    def add_gdp_real_acc_yoy(self, gdp, label=None, color=None):
+        data = economy(self.from_macro).gdp_real_acc_yoy(gdp).stretch()
+        df = self._convert_to_df(data)
+        self.data_list.append(
+            {
+                "df": df,
+                "label": label or gdp,
+                "color": color,
+            }
+        )
+        return self
+
+    def add_gdp_real_acc_raw(self, gdp, label=None, color=None):
+        data = economy(self.from_macro).gdp_real_acc_raw(gdp).stretch()
+        df = self._convert_to_df(data)
+        self.data_list.append(
+            {
+                "df": df,
+                "label": label or gdp,
+                "color": color,
+            }
+        )
+        return self
+
+    def add_gdp_nominal(self, gdp, label=None, color=None):
+        data = economy(self.from_macro).gdp_nominal(gdp).stretch()
+        df = self._convert_to_df(data)
+        self.data_list.append(
+            {
+                "df": df,
+                "label": label or gdp,
+                "color": color,
+            }
+        )
+        return self
+
+    def add_gdp_nominal_raw(self, gdp, label=None, color=None):
+        data = economy(self.from_macro).gdp_nominal_raw(gdp).stretch()
+        df = self._convert_to_df(data)
+        self.data_list.append(
+            {
+                "df": df,
+                "label": label or gdp,
+                "color": color,
+            }
+        )
+        return self
+
+    def add_gdp_nominal_yoy(self, gdp, label=None, color=None):
+        data = economy(self.from_macro).gdp_nominal_yoy(gdp).stretch()
+        df = self._convert_to_df(data)
+        self.data_list.append(
+            {
+                "df": df,
+                "label": label or gdp,
+                "color": color,
+            }
+        )
+        return self
+
+    def add_gdp_nominal_acc_yoy(self, gdp, label=None, color=None):
+        data = economy(self.from_macro).gdp_nominal_acc_yoy(gdp).stretch()
+        df = self._convert_to_df(data)
+        self.data_list.append(
+            {
+                "df": df,
+                "label": label or gdp,
+                "color": color,
+            }
+        )
+        return self
+
+    def add_gdp_nominal_acc_raw(self, gdp, label=None, color=None):
+        data = economy(self.from_macro).gdp_nominal_acc_raw(gdp).stretch()
+        df = self._convert_to_df(data)
+        self.data_list.append(
+            {
+                "df": df,
+                "label": label or gdp,
+                "color": color,
+            }
+        )
+        return self
+
+    def add_iip_mom(self, iip_type, label=None, color=None):
+        return self._add_series(
+            lambda r: economy(self.from_macro).iip_mom(r),
+            iip_type,
+            label,
+            color,
+            "iip_mom ",
+        )
+
+    def add_iip_qoq(self, iip_type, label=None, color=None):
+        return self._add_series(
+            lambda r: economy(self.from_macro).iip_qoq(r),
+            iip_type,
+            label,
+            color,
+            "iip_qoq",
+        )
+
+    def add_iip_yoy(self, iip_type, label=None, color=None):
+        return self._add_series(
+            lambda r: economy(self.from_macro).iip_yoy(r),
+            iip_type,
+            label,
+            color,
+            "iip_yoy",
+        )
+
+    def add_iip_acc_yoy(self, iip_type, label=None, color=None):
+        return self._add_series(
+            lambda r: economy(self.from_macro).iip_acc_yoy(r),
+            iip_type,
+            label,
+            color,
+            "iip_acc_yoy",
+        )
+
+    def add_transport_index_qoq(self, transport_type, label=None, color=None):
+        return self._add_series(
+            lambda r: economy(self.from_macro).transport_index_qoq(r),
+            transport_type,
+            label,
+            color,
+            "transport_index_qoq",
+        )
+
+    def add_transport_index_yoy(self, transport_type, label=None, color=None):
+        return self._add_series(
+            lambda r: economy(self.from_macro).transport_index_yoy(r),
+            transport_type,
+            label,
+            color,
+            "transport_index_yoy",
+        )
+
+    def add_transport_index_acc_yoy(self, transport_type, label=None, color=None):
+        return self._add_series(
+            lambda r: economy(self.from_macro).transport_index_acc_yoy(r),
+            transport_type,
+            label,
+            color,
+            "transport_index_acc_yoy",
+        )
+
+    def add_producer_index_qoq(self, producer_type, label=None, color=None):
+        return self._add_series(
+            lambda r: economy(self.from_macro).producer_index_qoq(r),
+            producer_type,
+            label,
+            color,
+            "producer_index_qoq",
+        )
+
+    def add_producer_index_yoy(self, producer_type, label=None, color=None):
+        return self._add_series(
+            lambda r: economy(self.from_macro).producer_index_yoy(r),
+            producer_type,
+            label,
+            color,
+            "producer_index_yoy",
+        )
+
+    def add_producer_index_acc_yoy(self, producer_type, label=None, color=None):
+        return self._add_series(
+            lambda r: economy(self.from_macro).producer_index_acc_yoy(r),
+            producer_type,
+            label,
+            color,
+            "producer_index_acc_yoy",
+        )
+
+    """-------------------GOVERNMENT---------------------"""
+
+    def add_public_investment(self, ministry, label=None, color=None):
+        return self._add_series(
+            lambda r: government(self.from_macro).public_investment(r),
+            ministry,
+            label,
+            color,
+            "public_investment",
+        )
+
+    def add_social_investment(self, ministry, label=None, color=None):
+        return self._add_series(
+            lambda r: government(self.from_macro).social_investment(r),
+            ministry,
+            label,
+            color,
+            "social_investment",
+        )
+
+    def add_budget_in(self, budget_type, label=None, color=None):
+        return self._add_series(
+            lambda r: government(self.from_macro).budget_in(r),
+            budget_type,
+            label,
+            color,
+            "budget_in",
+        )
+
+    def add_budget_out(self, budget_type, label=None, color=None):
+        return self._add_series(
+            lambda r: government(self.from_macro).budget_out(r),
+            budget_type,
+            label,
+            color,
+            "budget_out",
+        )
+
+    """-------------------FOREIGN---------------------"""
+    def add_import_byproduct(self, product, label=None, color=None):
+        return self._add_series(
+            lambda r: foreign(self.from_macro).import_byproduct(r),
+            product,
+            label,
+            color,
+            "import_byproduct",
+        )
+
+    def add_import_bylocation(self, location, label=None, color=None):
+        return self._add_series(
+            lambda r: foreign(self.from_macro).import_bylocation(r),
+            location,
+            label,
+            color,
+            "import_bylocation",
+        )
+
+    def add_export_byproduct(self, product, label=None, color=None):
+        return self._add_series(
+            lambda r: foreign(self.from_macro).export_byproduct(r),
+            product,
+            label,
+            color,
+            "export_byproduct",
+        )
+
+    def add_export_bylocation(self, location, label=None, color=None):
+        return self._add_series(
+            lambda r: foreign(self.from_macro).export_bylocation(r),
+            location,
+            label,
+            color,
+            "export_bylocation",
+        )
+
+    def add_export_import_total(self, total_type, label=None, color=None):
+        return self._add_series(
+            lambda r: foreign(self.from_macro).export_import_total(r),
+            total_type,
+            label,
+            color,
+            "export_import_total",
+        )
 
     def _setup_xaxis(self, ax):
         """Configure x-axis based on timeframe"""
@@ -285,10 +678,21 @@ class combinechart:
         fig.subplots_adjust(right=0.75)
         host.set_title(self.title)
 
-        # Hide left spine and y-axis
         host.spines["left"].set_visible(False)
         host.yaxis.set_visible(False)
-
+        # định dạng giá trị trục y
+        def auto_format(value, pos):
+            if value == 0:
+                return "0"
+            abs_value = abs(value)
+            if abs_value >= 1e9:
+                return f"{value/1e9:.1f}B"  
+            elif abs_value >= 1e6:
+                return f"{value/1e6:.1f}M"  
+            elif abs_value >= 1e3:
+                return f"{value/1e3:.1f}K"  
+            return f"{value:.1f}"
+        
         axes = []
         for i, data in enumerate(self.data_list):
             ax = host.twinx()
@@ -301,17 +705,17 @@ class combinechart:
                 data["df"]["Value"],
                 color=color,
                 label=data["label"],
-                linewidth=2,
+                linewidth=1,
             )
+            # Áp dụng định dạng giá trị cho trục y
+            ax.yaxis.set_major_formatter(plt.FuncFormatter(auto_format))
             ax.tick_params(axis="y", labelcolor=color)
-            ax.set_ylabel(data["label"], color=color)
+            # ax.set_ylabel(data["label"], color=color)
             ax.spines["right"].set_color(color)
             axes.append(ax)
 
-        # Configure x-axis based on timeframe
         self._setup_xaxis(host)
 
-        # Show legend if number of lines ≤ 5
         if len(self.data_list) <= 5:
             lines, labels = [], []
             for ax in axes:
@@ -321,17 +725,17 @@ class combinechart:
             host.legend(lines, labels, loc="upper left")
 
         fig.tight_layout()
-        # Save
+
         saved_path = None
         if save_path is not None:
-            # Nếu save_path là thư mục (folder)
+            # Nếu save_path là thư mục
             if os.path.isdir(save_path) or not os.path.splitext(save_path)[1]:
                 if not os.path.exists(save_path):
                     os.makedirs(save_path)
-                filename = datetime.now().strftime("chart_%Y%m%d_%H%M%S.jpg")
+                filename = datetime.now().strftime("LineChart_%Y%m%d_%H%M%S.jpg")
                 saved_path = os.path.join(save_path, filename)
             else:
-                # Nếu save_path là file cụ thể
+
                 saved_path = save_path
 
             fig.savefig(saved_path, dpi=300, bbox_inches="tight")
@@ -492,11 +896,10 @@ class combinechart:
         plt.close(fig)  # Close the figure to free memory
         return saved_path_full
 
+
 combinechart(
-    "M2022_01",
-    "M2024_01",
+    "M2022_04",
+    "M2024_02",
     timeframe="monthly",
     title="Biểu đồ Giá cổ phiếu VCB vs",
-).add_stock("VCB").add_borrowing("Vận tải và viễn thông").plot(
-    save_path="./combine_img"
-)
+).add_stock("VCB").add_public_investment("Trung ương").plot(save_path="./combine_img")
