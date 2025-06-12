@@ -94,7 +94,6 @@ class stockprice:
         self.from_macro = from_macro
         self.to_macro = to_macro
 
-    # determine prefix of input time
     def _parse_macro(self, macro, end=False):
 
         if not macro:
@@ -312,34 +311,23 @@ class finance:
                 self.rate_type = rate_type
                 self.from_macro = fin.from_macro
                 self.to_macro = fin.to_macro
-                self.term_mapping = {
-                    "ON": "Lãi suất BQ liên NH kỳ hạn qua đêm",
-                    "1W": "Lãi suất BQ liên NH kỳ hạn 1 tuần",
-                    "2W": "Lãi suất BQ liên NH kỳ hạn 2 tuần",
-                    "1M": "Lãi suất BQ liên NH kỳ hạn 1 tháng",
-                    "3M": "Lãi suất BQ liên NH kỳ hạn 3 tháng",
-                    "6M": "Lãi suất BQ liên NH kỳ hạn 6 tháng",
-                    "9M": "Lãi suất BQ liên NH kỳ hạn 9 tháng",
-                }
                 self.from_date = fin._parse_macro(self.from_macro)
                 self.to_date = fin._parse_macro(self.to_macro, end=True)
                 self.stretch_method = "average"
                 self.data_arr = self._load_data(self.rate_type)
 
             def _load_data(self, rate_type):
-                term_field = self.term_mapping.get(rate_type)
-                if not term_field:
-                    raise ValueError(f"Kỳ hạn '{rate_type}' không hợp lệ.")
-
                 records = db.importing_objs("FINANCE", data_name="interbank_rate")
                 if len(records) == 0:
                     return []
-
+                sample_record = next((r for r in records if r.data_dict), None)
+                if sample_record and rate_type not in sample_record.data_dict:
+                    raise ValueError(f"{rate_type} không tồn tại")
                 result = []
                 for record in records:
                     time_code = record.time_code
                     data_dict = record.data_dict
-                    rate_info = data_dict.get(term_field)
+                    rate_info = data_dict.get(rate_type)
 
                     if rate_info and "data" in rate_info:
                         result.append([time_code, rate_info["data"]])
@@ -389,30 +377,23 @@ class finance:
                 self.repo_type = repo_type
                 self.from_macro = fin.from_macro
                 self.to_macro = fin.to_macro
-                self.type_mapping = {
-                    "LH": "KL lưu hành Reverse Repo",
-                    "PH": "KL phát hành Reverse Repo",
-                    "ĐH": "KL đáo hạn Reverse Repo",
-                }
                 self.from_date = fin._parse_macro(self.from_macro)
                 self.to_date = fin._parse_macro(self.to_macro, end=True)
                 self.stretch_method = "average"
                 self.data_arr = self._load_data(self.repo_type)
 
             def _load_data(self, repo_type):
-                repo_field = self.type_mapping.get(repo_type)
-                if not repo_field:
-                    raise ValueError(f"{repo_type} không hợp lệ.")
-
                 records = db.importing_objs("FINANCE", data_name="reverse_repo")
                 if len(records) == 0:
                     return []
-
+                sample_record = next((r for r in records if r.data_dict), None)
+                if sample_record and repo_type not in sample_record.data_dict:
+                    raise ValueError(f"{repo_type} không tồn tại")
                 result = []
                 for record in records:
                     time_code = record.time_code
                     data_dict = record.data_dict
-                    repo_info = data_dict.get(repo_field)
+                    repo_info = data_dict.get(repo_type)
 
                     if repo_info and "data" in repo_info:
                         result.append([time_code, repo_info["data"]])
@@ -462,34 +443,23 @@ class finance:
                 self.term = term
                 self.from_macro = fin.from_macro
                 self.to_macro = fin.to_macro
-                self.term_mapping = {
-                    "1M": "Doanh số kỳ hạn 1 tháng",
-                    "1W": "Doanh số kỳ hạn 1 tuần",
-                    "2W": "Doanh số kỳ hạn 2 tuần",
-                    "3M": "Doanh số kỳ hạn 3 tháng",
-                    "6M": "Doanh số kỳ hạn 6 tháng",
-                    "9M": "Doanh số kỳ hạn 9 tháng",
-                    "ON": "Doanh số kỳ hạn qua đêm",
-                }
                 self.from_date = fin._parse_macro(self.from_macro)
                 self.to_date = fin._parse_macro(self.to_macro, end=True)
                 self.stretch_method = "last"
                 self.data_arr = self._load_data(self.term)
 
             def _load_data(self, term):
-                term_field = self.term_mapping.get(term)
-                if not term_field:
-                    raise ValueError(f"Kỳ hạn không hợp lệ.")
-
                 records = db.importing_objs("FINANCE", data_name="interbank_vol")
                 if len(records) == 0:
                     return []
-
+                sample_record = next((r for r in records if r.data_dict), None)
+                if sample_record and term not in sample_record.data_dict:
+                    raise ValueError(f"{term} không tồn tại")
                 result = []
                 for record in records:
                     time_code = record.time_code
                     data_dict = record.data_dict
-                    term_info = data_dict.get(term_field)
+                    term_info = data_dict.get(term)
 
                     if term_info and "data" in term_info:
                         result.append([time_code, term_info["data"]])
@@ -537,30 +507,23 @@ class finance:
                 self.outright_type = outright_type
                 self.from_macro = fin.from_macro
                 self.to_macro = fin.to_macro
-                self.outright_type_mapping = {
-                    "LH": "KL lưu hành Tín phiếu",
-                    "PH": "KL phát hành Tín phiếu",
-                    "ĐH": "KL đáo hạn Tín phiếu",
-                }
                 self.from_date = fin._parse_macro(self.from_macro)
                 self.to_date = fin._parse_macro(self.to_macro, end=True)
                 self.stretch_method = "last"
                 self.data_arr = self._load_data(self.outright_type)
 
             def _load_data(self, outright_type):
-                outright_type_field = self.outright_type_mapping.get(outright_type)
-                if not outright_type_field:
-                    raise ValueError(f"KL {outright_type} Tín phiếu không hợp lệ.")
-
                 records = db.importing_objs("FINANCE", data_name="sell_outright")
                 if len(records) == 0:
                     return []
-
+                sample_record = next((r for r in records if r.data_dict), None)
+                if sample_record and outright_type not in sample_record.data_dict:
+                    raise ValueError(f"{outright_type} không tồn tại")
                 result = []
                 for record in records:
                     time_code = record.time_code
                     data_dict = record.data_dict
-                    outright_type_info = data_dict.get("outright_type_field")
+                    outright_type_info = data_dict.get(outright_type)
 
                     if outright_type_info and "data" in outright_type_info:
                         result.append([time_code, outright_type_info["data"]])
@@ -609,38 +572,23 @@ class finance:
                 self.industry = industry
                 self.from_macro = fin.from_macro
                 self.to_macro = fin.to_macro
-                self.industry_mapping = {
-                    key: key
-                    for key in [
-                        "Xây dựng",
-                        "Thương mại",
-                        "Vận tải và viễn thông",
-                        "Công nghiệp và xây dựng",
-                        "Các hoạt động dịch vụ khác",
-                        "TỔNG TÍN DỤNG TRONG NỀN KINH TẾ",
-                        "Nông nghiệp, lâm nghiệp và thuỷ sản",
-                        "Hoạt động thương mại, vận tải và viễn thông",
-                    ]
-                }
                 self.from_date = fin._parse_macro(self.from_macro)
                 self.to_date = fin._parse_macro(self.to_macro, end=True)
                 self.stretch_method = "last"
                 self.data_arr = self._load_data(self.industry)
 
             def _load_data(self, industry):
-                industry_field = self.industry_mapping.get(industry)
-                if not industry_field:
-                    raise ValueError(f"{industry_field} không hợp lệ.")
-
                 records = db.importing_objs("Economy", data_name="gdp_real")
                 if len(records) == 0:
                     return []
-
+                sample_record = next((r for r in records if r.data_dict), None)
+                if sample_record and industry not in sample_record.data_dict:
+                    raise ValueError(f"{industry} không tồn tại")
                 result = []
                 for record in records:
                     time_code = record.time_code
                     data_dict = record.data_dict
-                    industry_info = data_dict.get(industry_field)
+                    industry_info = data_dict.get(industry)
 
                     if industry_info and "data" in industry_info:
                         result.append([time_code, industry_info["data"]])
@@ -680,33 +628,23 @@ class finance:
                 self.lending_type = lending_type
                 self.from_macro = fin.from_macro
                 self.to_macro = fin.to_macro
-                self.lending_type_mapping = {
-                    key: key
-                    for key in [
-                        "Tổng tiền gửi",
-                        "Tiền gửi của TCKT",
-                        "Tiền gửi của dân cư",
-                    ]
-                }
                 self.from_date = fin._parse_macro(self.from_macro)
                 self.to_date = fin._parse_macro(self.to_macro, end=True)
                 self.stretch_method = "last"
                 self.data_arr = self._load_data(self.lending_type)
 
             def _load_data(self, lending_type):
-                lending_type_field = self.lending_type_mapping.get(lending_type)
-                if not lending_type_field:
-                    raise ValueError(f"{lending_type_field} không hợp lệ.")
-
                 records = db.importing_objs("FINANCE", data_name="lending")
                 if len(records) == 0:
                     return []
-
+                sample_record = next((r for r in records if r.data_dict), None)
+                if sample_record and lending_type not in sample_record.data_dict:
+                    raise ValueError(f"{lending_type} không tồn tại")
                 result = []
                 for record in records:
                     time_code = record.time_code
                     data_dict = record.data_dict
-                    lending_type_info = data_dict.get(lending_type_field)
+                    lending_type_info = data_dict.get(lending_type)
 
                     if lending_type_info and "data" in lending_type_info:
                         result.append([time_code, lending_type_info["data"]])
@@ -746,26 +684,23 @@ class finance:
                 self.M2_type = M2_type
                 self.from_macro = fin.from_macro
                 self.to_macro = fin.to_macro
-                self.M2_type_mapping = {"M2": "M2"}
                 self.from_date = fin._parse_macro(self.from_macro)
                 self.to_date = fin._parse_macro(self.to_macro, end=True)
                 self.stretch_method = "last"
                 self.data_arr = self._load_data(self.M2_type)
 
             def _load_data(self, M2_type):
-                M2_field = self.M2_type_mapping.get(M2_type)
-                if not M2_field:
-                    raise ValueError(f"{M2_type} không hợp lệ.")
-
                 records = db.importing_objs("FINANCE", data_name="M2")
                 if len(records) == 0:
                     return []
-
+                sample_record = next((r for r in records if r.data_dict), None)
+                if sample_record and M2_type not in sample_record.data_dict:
+                    raise ValueError(f"{M2_type} không tồn tại")
                 result = []
                 for record in records:
                     time_code = record.time_code
                     data_dict = record.data_dict
-                    M2_type_info = data_dict.get(M2_field)
+                    M2_type_info = data_dict.get(M2_type)
 
                     if M2_type_info and "data" in M2_type_info:
                         result.append([time_code, M2_type_info["data"]])
@@ -805,35 +740,23 @@ class finance:
                 self.moneysupply_type = moneysupply_type
                 self.from_macro = fin.from_macro
                 self.to_macro = fin.to_macro
-                self.moneysupply_type_mapping = {
-                    key: key
-                    for key in [
-                        "Tổng phương tiện thanh toán",
-                        "Tổng phương tiện thanh toán_Tiền gửi của cư dân",
-                        "Tổng phương tiện thanh toán_Tiền gửi của các TCKT",
-                    ]
-                }
                 self.from_date = fin._parse_macro(self.from_macro)
                 self.to_date = fin._parse_macro(self.to_macro, end=True)
                 self.stretch_method = "last"
                 self.data_arr = self._load_data(self.moneysupply_type)
 
             def _load_data(self, moneysupply_type):
-                moneysupply_type_field = self.moneysupply_type_mapping.get(
-                    moneysupply_type
-                )
-                if not moneysupply_type_field:
-                    raise ValueError(f"{moneysupply_type} không hợp lệ.")
-
                 records = db.importing_objs("FINANCE", data_name="moneysupply")
                 if len(records) == 0:
                     return []
-
+                sample_record = next((r for r in records if r.data_dict), None)
+                if sample_record and moneysupply_type not in sample_record.data_dict:
+                    raise ValueError(f"{moneysupply_type} không tồn tại")
                 result = []
                 for record in records:
                     time_code = record.time_code
                     data_dict = record.data_dict
-                    moneysupply_type_info = data_dict.get(moneysupply_type_field)
+                    moneysupply_type_info = data_dict.get(moneysupply_type)
 
                     if moneysupply_type_info and "data" in moneysupply_type_info:
                         result.append([time_code, moneysupply_type_info["data"]])
@@ -874,39 +797,23 @@ class finance:
                 self.loans_type = loans_type
                 self.from_macro = fin.from_macro
                 self.to_macro = fin.to_macro
-                self.loans_type_mapping = {
-                    key: key
-                    for key in [
-                        "Tổng dư nợ tín dụng",
-                        "Tổng dư nợ tín dụng_Dư nợ tín dụng xây dựng",
-                        "Tổng dư nợ tín dụng_Dư nợ tín dụng các HĐ khác",
-                        "Tổng dư nợ tín dụng_Dư nợ tín dụng công nghiệp",
-                        "Tổng dư nợ tín dụng_Dư nợ tín dụng thương mại",
-                        "Tổng dư nợ tín dụng_Dư nợ tín dụng nông, lâm, thủy sản",
-                        "Tổng dư nợ tín dụng_Dư nợ tín dụng vận tải và viễn thông",
-                        "Tổng dư nợ tín dụng_Dư nợ tín dụng công nghiệp và xây dựng",
-                        "Tổng dư nợ tín dụng_Dư nợ tín dụng thương mại, vận tải, viễn thông",
-                    ]
-                }
                 self.from_date = fin._parse_macro(self.from_macro)
                 self.to_date = fin._parse_macro(self.to_macro, end=True)
                 self.stretch_method = "last"
                 self.data_arr = self._load_data(self.loans_type)
 
             def _load_data(self, loans_type):
-                loans_type_field = self.loans_type_mapping.get(loans_type)
-                if not loans_type_field:
-                    raise ValueError(f"{loans_type} không hợp lệ.")
-
                 records = db.importing_objs("FINANCE", data_name="loans")
                 if len(records) == 0:
                     return []
-
+                sample_record = next((r for r in records if r.data_dict), None)
+                if sample_record and loans_type not in sample_record.data_dict:
+                    raise ValueError(f"{loans_type} không tồn tại")
                 result = []
                 for record in records:
                     time_code = record.time_code
                     data_dict = record.data_dict
-                    loans_type_info = data_dict.get(loans_type_field)
+                    loans_type_info = data_dict.get(loans_type)
 
                     if loans_type_info and "data" in loans_type_info:
                         result.append([time_code, loans_type_info["data"]])
@@ -947,37 +854,23 @@ class finance:
                 self.account_type = account_type
                 self.from_macro = fin.from_macro
                 self.to_macro = fin.to_macro
-                self.account_type_mapping = {
-                    key: key
-                    for key in [
-                        "Tổng số tài khoản trong nước",
-                        "Tổng số tài khoản chứng khoán",
-                        "Tổng số tài khoản nước ngoài",
-                        "Số tài khoản cá nhân trong nước",
-                        "Số tài khoản cá nhân nước ngoài",
-                        "Số tài khoản tổ chức trong nước",
-                        "Số tài khoản tổ chức nước ngoài",
-                    ]
-                }
                 self.from_date = fin._parse_macro(self.from_macro)
                 self.to_date = fin._parse_macro(self.to_macro, end=True)
                 self.stretch_method = "last"
                 self.data_arr = self._load_data(self.account_type)
 
             def _load_data(self, account_type):
-                account_type_field = self.account_type_mapping.get(account_type)
-                if not account_type_field:
-                    raise ValueError(f"{account_type} không hợp lệ.")
-
                 records = db.importing_objs("FINANCE", data_name="securities_account")
                 if len(records) == 0:
                     return []
-
+                sample_record = next((r for r in records if r.data_dict), None)
+                if sample_record and account_type not in sample_record.data_dict:
+                    raise ValueError(f"{account_type} không tồn tại")
                 result = []
                 for record in records:
                     time_code = record.time_code
                     data_dict = record.data_dict
-                    account_type_info = data_dict.get(account_type_field)
+                    account_type_info = data_dict.get(account_type)
 
                     if account_type_info and "data" in account_type_info:
                         result.append([time_code, account_type_info["data"]])
@@ -1008,7 +901,6 @@ class finance:
                 )
 
         return securities_account(account_type)
-
 
 class economy:
     def __init__(self, from_macro=None, to_macro=None):
@@ -1065,26 +957,23 @@ class economy:
                 self.pmi_type = pmi_type
                 self.from_macro = fin.from_macro
                 self.to_macro = fin.to_macro
-                self.pmi_type_mapping = {"pmi": "pmi"}
                 self.from_date = fin._parse_macro(self.from_macro)
                 self.to_date = fin._parse_macro(self.to_macro, end=True)
                 self.stretch_method = "last"
                 self.data_arr = self._load_data(self.pmi_type)
 
             def _load_data(self, pmi_type):
-                pmi_field = self.pmi_type_mapping.get(pmi_type)
-                if not pmi_field:
-                    raise ValueError(f"{pmi_type} không hợp lệ.")
-
                 records = db.importing_objs("Economy", data_name="pmi")
                 if len(records) == 0:
                     return []
-
+                sample_record = next((r for r in records if r.data_dict), None)
+                if sample_record and pmi_type not in sample_record.data_dict:
+                    raise ValueError(f"{pmi_type} không tồn tại")
                 result = []
                 for record in records:
                     time_code = record.time_code
                     data_dict = record.data_dict
-                    pmi_type_info = data_dict.get(pmi_field)
+                    pmi_type_info = data_dict.get(pmi_type)
 
                     if pmi_type_info and "data" in pmi_type_info:
                         result.append([time_code, pmi_type_info["data"]])
@@ -1124,38 +1013,23 @@ class economy:
                 self.transport_type = transport_type
                 self.from_macro = fin.from_macro
                 self.to_macro = fin.to_macro
-                self.transport_type_mapping = {
-                    key: key
-                    for key in [
-                        "Tổng số",
-                        "Hàng không",
-                        "Trong nước",
-                        "Ngoài nước",
-                        "Đường bộ",
-                        "Đường sắt",
-                        "Đường biển",
-                        "Đường thủy nội địa",
-                    ]
-                }
                 self.from_date = fin._parse_macro(self.from_macro)
                 self.to_date = fin._parse_macro(self.to_macro, end=True)
                 self.stretch_method = "last"
                 self.data_arr = self._load_data(self.transport_type)
 
             def _load_data(self, transport_type):
-                transport_type_field = self.transport_type_mapping.get(transport_type)
-                if not transport_type_field:
-                    raise ValueError(f"{transport_type} không hợp lệ.")
-
                 records = db.importing_objs("Economy", data_name="passenger_transport")
                 if len(records) == 0:
                     return []
-
+                sample_record = next((r for r in records if r.data_dict), None)
+                if sample_record and transport_type not in sample_record.data_dict:
+                    raise ValueError(f"{transport_type} không tồn tại")
                 result = []
                 for record in records:
                     time_code = record.time_code
                     data_dict = record.data_dict
-                    transport_type_info = data_dict.get(transport_type_field)
+                    transport_type_info = data_dict.get(transport_type)
 
                     if transport_type_info and "data" in transport_type_info:
                         result.append([time_code, transport_type_info["data"]])
@@ -1195,37 +1069,25 @@ class economy:
                 self.revenue_type = revenue_type
                 self.from_macro = fin.from_macro
                 self.to_macro = fin.to_macro
-                self.revenue_type_mapping = {
-                    key: key
-                    for key in [
-                        "Tổng mức bán lẻ hàng hóa",
-                        "Tổng mức bán lẻ hàng hóa_Dịch vụ khác",
-                        "Tổng mức bán lẻ hàng hóa_Bán lẻ hàng hóa",
-                        "Tổng mức bán lẻ hàng hóa_Dịch vụ lữ hành",
-                        "Tổng mức bán lẻ hàng hóa_Dịch vụ lưu trú, ăn uống",
-                    ]
-                }
                 self.from_date = fin._parse_macro(self.from_macro)
                 self.to_date = fin._parse_macro(self.to_macro, end=True)
                 self.stretch_method = "last"
                 self.data_arr = self._load_data(self.revenue_type)
 
             def _load_data(self, pmi_type):
-                revenue_type_field = self.revenue_type_mapping.get(revenue_type)
-                if not revenue_type_field:
-                    raise ValueError(f"{revenue_type} không hợp lệ.")
-
                 records = db.importing_objs(
                     "Economy", data_name="retail_revenue_acc_raw"
                 )
                 if len(records) == 0:
                     return []
-
+                sample_record = next((r for r in records if r.data_dict), None)
+                if sample_record and revenue_type not in sample_record.data_dict:
+                    raise ValueError(f"{revenue_type} không tồn tại")
                 result = []
                 for record in records:
                     time_code = record.time_code
                     data_dict = record.data_dict
-                    revenue_type_info = data_dict.get(revenue_type_field)
+                    revenue_type_info = data_dict.get(revenue_type)
 
                     if revenue_type_info and "data" in revenue_type_info:
                         result.append([time_code, revenue_type_info["data"]])
@@ -1265,37 +1127,25 @@ class economy:
                 self.revenue_type = revenue_type
                 self.from_macro = fin.from_macro
                 self.to_macro = fin.to_macro
-                self.revenue_type_mapping = {
-                    key: key
-                    for key in [
-                        "Tổng mức bán lẻ hàng hóa",
-                        "Tổng mức bán lẻ hàng hóa_Dịch vụ khác",
-                        "Tổng mức bán lẻ hàng hóa_Bán lẻ hàng hóa",
-                        "Tổng mức bán lẻ hàng hóa_Dịch vụ lữ hành",
-                        "Tổng mức bán lẻ hàng hóa_Dịch vụ lưu trú, ăn uống",
-                    ]
-                }
                 self.from_date = fin._parse_macro(self.from_macro)
                 self.to_date = fin._parse_macro(self.to_macro, end=True)
                 self.stretch_method = "last"
                 self.data_arr = self._load_data(self.revenue_type)
 
             def _load_data(self, revenue_type):
-                revenue_type_field = self.pmi_type_mapping.get(revenue_type)
-                if not revenue_type_field:
-                    raise ValueError(f"{revenue_type} không hợp lệ.")
-
                 records = db.importing_objs(
                     "Economy", data_name="retail_revenue_acc_yoy"
                 )
                 if len(records) == 0:
                     return []
-
+                sample_record = next((r for r in records if r.data_dict), None)
+                if sample_record and revenue_type not in sample_record.data_dict:
+                    raise ValueError(f"{revenue_type} không tồn tại")
                 result = []
                 for record in records:
                     time_code = record.time_code
                     data_dict = record.data_dict
-                    revenue_type_info = data_dict.get(revenue_type_field)
+                    revenue_type_info = data_dict.get(revenue_type)
 
                     if revenue_type_info and "data" in revenue_type_info:
                         result.append([time_code, revenue_type_info["data"]])
@@ -1335,35 +1185,23 @@ class economy:
                 self.revenue_type = revenue_type
                 self.from_macro = fin.from_macro
                 self.to_macro = fin.to_macro
-                self.revenue_type_mapping = {
-                    key: key
-                    for key in [
-                        "Tổng mức bán lẻ hàng hóa",
-                        "Tổng mức bán lẻ hàng hóa_Dịch vụ khác",
-                        "Tổng mức bán lẻ hàng hóa_Bán lẻ hàng hóa",
-                        "Tổng mức bán lẻ hàng hóa_Dịch vụ lữ hành",
-                        "Tổng mức bán lẻ hàng hóa_Dịch vụ lưu trú, ăn uống",
-                    ]
-                }
                 self.from_date = fin._parse_macro(self.from_macro)
                 self.to_date = fin._parse_macro(self.to_macro, end=True)
                 self.stretch_method = "last"
                 self.data_arr = self._load_data(self.revenue_type)
 
             def _load_data(self, revenue_type):
-                revenue_type_field = self.revenue_type_mapping.get(revenue_type)
-                if not revenue_type_field:
-                    raise ValueError(f"{revenue_type} không hợp lệ.")
-
                 records = db.importing_objs("Economy", data_name="retail_revenue_raw")
                 if len(records) == 0:
                     return []
-
+                sample_record = next((r for r in records if r.data_dict), None)
+                if sample_record and revenue_type not in sample_record.data_dict:
+                    raise ValueError(f"{revenue_type} không tồn tại")
                 result = []
                 for record in records:
                     time_code = record.time_code
                     data_dict = record.data_dict
-                    revenue_type_info = data_dict.get(revenue_type_field)
+                    revenue_type_info = data_dict.get(revenue_type)
 
                     if revenue_type_info and "data" in revenue_type_info:
                         result.append([time_code, revenue_type_info["data"]])
@@ -1403,35 +1241,23 @@ class economy:
                 self.revenue_type = revenue_type
                 self.from_macro = fin.from_macro
                 self.to_macro = fin.to_macro
-                self.revenue_type_mapping = {
-                    key: key
-                    for key in [
-                        "Tổng mức bán lẻ hàng hóa",
-                        "Tổng mức bán lẻ hàng hóa_Dịch vụ khác",
-                        "Tổng mức bán lẻ hàng hóa_Bán lẻ hàng hóa",
-                        "Tổng mức bán lẻ hàng hóa_Dịch vụ lữ hành",
-                        "Tổng mức bán lẻ hàng hóa_Dịch vụ lưu trú, ăn uống",
-                    ]
-                }
                 self.from_date = fin._parse_macro(self.from_macro)
                 self.to_date = fin._parse_macro(self.to_macro, end=True)
                 self.stretch_method = "last"
                 self.data_arr = self._load_data(self.revenue_type)
 
             def _load_data(self, revenue_type):
-                revenue_type_field = self.pmi_type_mapping.get(revenue_type)
-                if not revenue_type_field:
-                    raise ValueError(f"{revenue_type} không hợp lệ.")
-
                 records = db.importing_objs("Economy", data_name="retail_revenue_yoy")
                 if len(records) == 0:
                     return []
-
+                sample_record = next((r for r in records if r.data_dict), None)
+                if sample_record and revenue_type not in sample_record.data_dict:
+                    raise ValueError(f"{revenue_type} không tồn tại")
                 result = []
                 for record in records:
                     time_code = record.time_code
                     data_dict = record.data_dict
-                    revenue_type_info = data_dict.get(revenue_type_field)
+                    revenue_type_info = data_dict.get(revenue_type)
 
                     if revenue_type_info and "data" in revenue_type_info:
                         result.append([time_code, revenue_type_info["data"]])
@@ -1471,64 +1297,23 @@ class economy:
                 self.cpi_type = cpi_type
                 self.from_macro = fin.from_macro
                 self.to_macro = fin.to_macro
-                self.cpi_type_mapping = {
-                    key: key
-                    for key in [
-                        "Chỉ số giá tiêu dùng_mom",
-                        "Chỉ số giá tiêu dùng_yoy",
-                        "Chỉ số giá tiêu dùng_Giao thông_mom",
-                        "Chỉ số giá tiêu dùng_Giao thông_yoy",
-                        "Chỉ số giá tiêu dùng_Giáo dục_mom",
-                        "Chỉ số giá tiêu dùng_Giáo dục_yoy",
-                        "Chỉ số giá tiêu dùng_Nhà ở và VLXD_mom",
-                        "Chỉ số giá tiêu dùng_Nhà ở và VLXD_yoy",
-                        "Chỉ số giá tiêu dùng_Chỉ số giá vàng_mom",
-                        "Chỉ số giá tiêu dùng_Chỉ số giá vàng_yoy",
-                        "Chỉ số giá tiêu dùng_May mặc và giày dép_mom",
-                        "Chỉ số giá tiêu dùng_May mặc và giày dép_yoy",
-                        "Chỉ số giá tiêu dùng_Bưu chính viễn thông_mom",
-                        "Chỉ số giá tiêu dùng_Bưu chính viễn thông_yoy",
-                        "Chỉ số giá tiêu dùng_Chỉ số giá đô la Mỹ_mom",
-                        "Chỉ số giá tiêu dùng_Chỉ số giá đô la Mỹ_yoy",
-                        "Chỉ số giá tiêu dùng_Đồ uống và thuốc lá_mom",
-                        "Chỉ số giá tiêu dùng_Đồ uống và thuốc lá_yoy",
-                        "Chỉ số giá tiêu dùng_Thuốc và dịch vụ y tế_mom",
-                        "Chỉ số giá tiêu dùng_Thuốc và dịch vụ y tế_yoy",
-                        "Chỉ số giá tiêu dùng_Đồ dùng và dịch vụ khác_mom",
-                        "Chỉ số giá tiêu dùng_Đồ dùng và dịch vụ khác_yoy",
-                        "Chỉ số giá tiêu dùng_Hàng ăn và dịch vụ ăn uống_mom",
-                        "Chỉ số giá tiêu dùng_Hàng ăn và dịch vụ ăn uống_yoy",
-                        "Chỉ số giá tiêu dùng_Văn hóa, giải trí và du lịch_mom",
-                        "Chỉ số giá tiêu dùng_Văn hóa, giải trí và du lịch_yoy",
-                        "Chỉ số giá tiêu dùng_Thiết bị và đồ dùng gia đình_mom",
-                        "Chỉ số giá tiêu dùng_Thiết bị và đồ dùng gia đình_yoy",
-                        "Chỉ số giá tiêu dùng_Hàng ăn và dịch vụ ăn uống_Thực phẩm_mom",
-                        "Chỉ số giá tiêu dùng_Hàng ăn và dịch vụ ăn uống_Thực phẩm_yoy",
-                        "Chỉ số giá tiêu dùng_Hàng ăn và dịch vụ ăn uống_Lương thực_mom",
-                        "Chỉ số giá tiêu dùng_Hàng ăn và dịch vụ ăn uống_Lương thực_yoy",
-                        "Chỉ số giá tiêu dùng_Hàng ăn và dịch vụ ăn uống_Ăn uống ngoài gia đình_mom",
-                        "Chỉ số giá tiêu dùng_Hàng ăn và dịch vụ ăn uống_Ăn uống ngoài gia đình_yoy",
-                    ]
-                }
                 self.from_date = fin._parse_macro(self.from_macro)
                 self.to_date = fin._parse_macro(self.to_macro, end=True)
                 self.stretch_method = "last"
                 self.data_arr = self._load_data(self.cpi_type)
 
             def _load_data(self, cpi_type):
-                cpi_type_field = self.cpi_type_mapping.get(cpi_type)
-                if not cpi_type_field:
-                    raise ValueError(f"{cpi_type} không hợp lệ.")
-
                 records = db.importing_objs("Economy", data_name="cpi")
                 if len(records) == 0:
                     return []
-
+                sample_record = next((r for r in records if r.data_dict), None)
+                if sample_record and cpi_type not in sample_record.data_dict:
+                    raise ValueError(f"{cpi_type} không tồn tại")
                 result = []
                 for record in records:
                     time_code = record.time_code
                     data_dict = record.data_dict
-                    cpi_type_info = data_dict.get(cpi_type_field)
+                    cpi_type_info = data_dict.get(cpi_type)
 
                     if cpi_type_info and "data" in cpi_type_info:
                         result.append([time_code, cpi_type_info["data"]])
@@ -1568,47 +1353,23 @@ class economy:
                 self.cpi_type = cpi_type
                 self.from_macro = fin.from_macro
                 self.to_macro = fin.to_macro
-                self.cpi_type_mapping = {
-                    key: key
-                    for key in [
-                        "Chỉ số giá tiêu dùng",
-                        "Chỉ số giá tiêu dùng_Giao thông",
-                        "Chỉ số giá tiêu dùng_Giáo dục",
-                        "Chỉ số giá tiêu dùng_Nhà ở và VLXD",
-                        "Chỉ số giá tiêu dùng_Chỉ số giá vàng",
-                        "Chỉ số giá tiêu dùng_May mặc và giày dép",
-                        "Chỉ số giá tiêu dùng_Bưu chính viễn thông",
-                        "Chỉ số giá tiêu dùng_Chỉ số giá đô la Mỹ",
-                        "Chỉ số giá tiêu dùng_Đồ uống và thuốc lá",
-                        "Chỉ số giá tiêu dùng_Thuốc và dịch vụ y tế",
-                        "Chỉ số giá tiêu dùng_Đồ dùng và dịch vụ khác",
-                        "Chỉ số giá tiêu dùng_Hàng ăn và dịch vụ ăn uống",
-                        "Chỉ số giá tiêu dùng_Văn hóa, giải trí và du lịch",
-                        "Chỉ số giá tiêu dùng_Thiết bị và đồ dùng gia đình",
-                        "Chỉ số giá tiêu dùng_Hàng ăn và dịch vụ ăn uống_Thực phẩm",
-                        "Chỉ số giá tiêu dùng_Hàng ăn và dịch vụ ăn uống_Lương thực",
-                        "Chỉ số giá tiêu dùng_Hàng ăn và dịch vụ ăn uống_Ăn uống ngoài gia đình",
-                    ]
-                }
                 self.from_date = fin._parse_macro(self.from_macro)
                 self.to_date = fin._parse_macro(self.to_macro, end=True)
                 self.stretch_method = "last"
                 self.data_arr = self._load_data(self.cpi_type)
 
             def _load_data(self, cpi_type):
-                cpi_type_field = self.cpi_type_mapping.get(cpi_type)
-                if not cpi_type_field:
-                    raise ValueError(f"{cpi_type} không hợp lệ.")
-
                 records = db.importing_objs("Economy", data_name="cpi_mom")
                 if len(records) == 0:
                     return []
-
+                sample_record = next((r for r in records if r.data_dict), None)
+                if sample_record and cpi_type not in sample_record.data_dict:
+                    raise ValueError(f"{cpi_type} không tồn tại")
                 result = []
                 for record in records:
                     time_code = record.time_code
                     data_dict = record.data_dict
-                    cpi_type_info = data_dict.get(cpi_type_field)
+                    cpi_type_info = data_dict.get(cpi_type)
 
                     if cpi_type_info and "data" in cpi_type_info:
                         result.append([time_code, cpi_type_info["data"]])
@@ -1648,47 +1409,23 @@ class economy:
                 self.cpi_type = cpi_type
                 self.from_macro = fin.from_macro
                 self.to_macro = fin.to_macro
-                self.cpi_type_mapping = {
-                    key: key
-                    for key in [
-                        "Chỉ số giá tiêu dùng",
-                        "Chỉ số giá tiêu dùng_Giao thông",
-                        "Chỉ số giá tiêu dùng_Giáo dục",
-                        "Chỉ số giá tiêu dùng_Nhà ở và VLXD",
-                        "Chỉ số giá tiêu dùng_Chỉ số giá vàng",
-                        "Chỉ số giá tiêu dùng_May mặc và giày dép",
-                        "Chỉ số giá tiêu dùng_Bưu chính viễn thông",
-                        "Chỉ số giá tiêu dùng_Chỉ số giá đô la Mỹ",
-                        "Chỉ số giá tiêu dùng_Đồ uống và thuốc lá",
-                        "Chỉ số giá tiêu dùng_Thuốc và dịch vụ y tế",
-                        "Chỉ số giá tiêu dùng_Đồ dùng và dịch vụ khác",
-                        "Chỉ số giá tiêu dùng_Hàng ăn và dịch vụ ăn uống",
-                        "Chỉ số giá tiêu dùng_Văn hóa, giải trí và du lịch",
-                        "Chỉ số giá tiêu dùng_Thiết bị và đồ dùng gia đình",
-                        "Chỉ số giá tiêu dùng_Hàng ăn và dịch vụ ăn uống_Thực phẩm",
-                        "Chỉ số giá tiêu dùng_Hàng ăn và dịch vụ ăn uống_Lương thực",
-                        "Chỉ số giá tiêu dùng_Hàng ăn và dịch vụ ăn uống_Ăn uống ngoài gia đình",
-                    ]
-                }
                 self.from_date = fin._parse_macro(self.from_macro)
                 self.to_date = fin._parse_macro(self.to_macro, end=True)
                 self.stretch_method = "last"
                 self.data_arr = self._load_data(self.cpi_type)
 
             def _load_data(self, cpi_type):
-                cpi_type_field = self.cpi_type_mapping.get(cpi_type)
-                if not cpi_type_field:
-                    raise ValueError(f"{cpi_type} không hợp lệ.")
-
                 records = db.importing_objs("Economy", data_name="cpi_yoy")
                 if len(records) == 0:
                     return []
-
+                sample_record = next((r for r in records if r.data_dict), None)
+                if sample_record and cpi_type not in sample_record.data_dict:
+                    raise ValueError(f"{cpi_type} không tồn tại")
                 result = []
                 for record in records:
                     time_code = record.time_code
                     data_dict = record.data_dict
-                    cpi_type_info = data_dict.get(cpi_type_field)
+                    cpi_type_info = data_dict.get(cpi_type)
 
                     if cpi_type_info and "data" in cpi_type_info:
                         result.append([time_code, cpi_type_info["data"]])
@@ -1729,87 +1466,23 @@ class economy:
                 self.stretch_method = "average"
                 self.from_macro = fin.from_macro
                 self.to_macro = fin.to_macro
-                self.gdp_mapping = {
-                    key: key
-                    for key in [
-                        "Tổng GDP_value",
-                        "Tổng GDP_growth",
-                        "Tổng GDP_Dịch vụ_value",
-                        "Tổng GDP_Dịch vụ_growth",
-                        "Tổng GDP_Công nghiệp và xây dựng_value",
-                        "Tổng GDP_Công nghiệp và xây dựng_growth",
-                        "Tổng GDP_Dịch vụ_Vận tải, kho bãi_value",
-                        "Tổng GDP_Dịch vụ_Vận tải, kho bãi_growth",
-                        "Tổng GDP_Nông, lâm nghiệp và thủy sản_value",
-                        "Tổng GDP_Nông, lâm nghiệp và thủy sản_growth",
-                        "Tổng GDP_Dịch vụ_Giáo dục và đào tạo_value",
-                        "Tổng GDP_Dịch vụ_Giáo dục và đào tạo_growth",
-                        "Tổng GDP_Công nghiệp và xây dựng_Xây dựng_value",
-                        "Tổng GDP_Dịch vụ_Thông tin và truyền thông_value",
-                        "Tổng GDP_Công nghiệp và xây dựng_Xây dựng_growth",
-                        "Tổng GDP_Dịch vụ_Thông tin và truyền thông_growth",
-                        "Tổng GDP_Dịch vụ_Hoạt động dịch vụ khác_value",
-                        "Tổng GDP_Công nghiệp và xây dựng_Công nghiệp_value",
-                        "Tổng GDP_Dịch vụ_Hoạt động dịch vụ khác_growth",
-                        "Tổng GDP_Công nghiệp và xây dựng_Công nghiệp_growth",
-                        "Tổng GDP_Dịch vụ_Dịch vụ lưu trú và ăn uống_value",
-                        "Tổng GDP_Dịch vụ_Dịch vụ lưu trú và ăn uống_growth",
-                        "Tổng GDP_Nông, lâm nghiệp và thủy sản_Thủy sản_value",
-                        "Tổng GDP_Thuế sản phẩm trừ trợ cấp sản phẩm_value",
-                        "Tổng GDP_Nông, lâm nghiệp và thủy sản_Lâm nghiệp_value",
-                        "Tổng GDP_Nông, lâm nghiệp và thủy sản_Thủy sản_growth",
-                        "Tổng GDP_Thuế sản phẩm trừ trợ cấp sản phẩm_growth",
-                        "Tổng GDP_Nông, lâm nghiệp và thủy sản_Lâm nghiệp_growth",
-                        "Tổng GDP_Nông, lâm nghiệp và thủy sản_Nông nghiệp_value",
-                        "Tổng GDP_Dịch vụ_Nghệ thuật, vui chơi và giải trí_value",
-                        "Tổng GDP_Nông, lâm nghiệp và thủy sản_Nông nghiệp_growth",
-                        "Tổng GDP_Dịch vụ_Nghệ thuật, vui chơi và giải trí_growth",
-                        "Tổng GDP_Dịch vụ_Hoạt động kinh doanh bất động sản_value",
-                        "Tổng GDP_Công nghiệp và xây dựng_Công nghiệp_Khai khoáng_value",
-                        "Tổng GDP_Dịch vụ_Hoạt động kinh doanh bất động sản_growth",
-                        "Tổng GDP_Công nghiệp và xây dựng_Công nghiệp_Khai khoáng_growth",
-                        "Tổng GDP_Dịch vụ_Y tế và hoạt động trợ giúp xã hội_value",
-                        "Tổng GDP_Dịch vụ_Y tế và hoạt động trợ giúp xã hội_growth",
-                        "Tổng GDP_Dịch vụ_Hoạt động hành chính và dịch vụ hỗ trợ_value",
-                        "Tổng GDP_Dịch vụ_Hoạt động hành chính và dịch vụ hỗ trợ_growth",
-                        "Tổng GDP_Dịch vụ_Hoạt động chuyên môn, khoa học và công nghệ_value",
-                        "Tổng GDP_Dịch vụ_Hoạt động tài chính, ngân hàng và bảo hiểm_value",
-                        "Tổng GDP_Dịch vụ_Hoạt động chuyên môn, khoa học và công nghệ_growth",
-                        "Tổng GDP_Dịch vụ_Hoạt động tài chính, ngân hàng và bảo hiểm_growth",
-                        "Tổng GDP_Công nghiệp và xây dựng_Công nghiệp_Công nghiệp chế biến, chế tạo_value",
-                        "Tổng GDP_Công nghiệp và xây dựng_Công nghiệp_Công nghiệp chế biến, chế tạo_growth",
-                        "Tổng GDP_Dịch vụ_Bán buôn và bán lẻ; sửa chữa ô tô, mô tô, xe máy và xe có động cơ khác_value",
-                        "Tổng GDP_Dịch vụ_Bán buôn và bán lẻ; sửa chữa ô tô, mô tô, xe máy và xe có động cơ khác_growth",
-                        "Tổng GDP_Công nghiệp và xây dựng_Công nghiệp_Cung cấp nước; hoạt động quản lý và xử lý rác thải, nước thải_value",
-                        "Tổng GDP_Công nghiệp và xây dựng_Công nghiệp_Cung cấp nước; hoạt động quản lý và xử lý rác thải, nước thải_growth",
-                        "Tổng GDP_Công nghiệp và xây dựng_Công nghiệp_Sản xuất và phân phối điện, khí đốt, nước nóng, hơi nước và điều hòa không khí_value",
-                        "Tổng GDP_Công nghiệp và xây dựng_Công nghiệp_Sản xuất và phân phối điện, khí đốt, nước nóng, hơi nước và điều hòa không khí_growth",
-                        "Tổng GDP_Dịch vụ_Hoạt động của Đảng Cộng sản, tổ chức chính trị-xã hội; quản lý Nhà nước, an ninh quốc phòng; đảm bảo xã hội bắt buộc_value",
-                        "Tổng GDP_Dịch vụ_Hoạt động của Đảng Cộng sản, tổ chức chính trị-xã hội; quản lý Nhà nước, an ninh quốc phòng; đảm bảo xã hội bắt buộc_growth",
-                        "Tổng GDP_Dịch vụ_Hoạt động làm thuê các công việc trong các hộ gia đình, sản xuất sản phẩm vật chất và dịch vụ tự tiêu dùng của hộ gia đình_value",
-                        "Tổng GDP_Dịch vụ_Hoạt động làm thuê các công việc trong các hộ gia đình, sản xuất sản phẩm vật chất và dịch vụ tự tiêu dùng của hộ gia đình_growth",
-                    ]
-                }
-                # self.industry_keys =
                 self.from_date = fin._parse_macro(self.from_macro)
                 self.to_date = fin._parse_macro(self.to_macro, end=True)
                 self.stretch_method = "average"
                 self.data_arr = self._load_data(self.gdp)
 
             def _load_data(self, gdp):
-                gdp_field = self.gdp_mapping.get(gdp)
-                if not gdp_field:
-                    raise ValueError(f"{gdp_field} không hợp lệ.")
-
                 records = db.importing_objs("Economy", data_name="gdp_real")
                 if len(records) == 0:
                     return []
-
+                sample_record = next((r for r in records if r.data_dict), None)
+                if sample_record and gdp not in sample_record.data_dict:
+                    raise ValueError(f"{gdp} không tồn tại")
                 result = []
                 for record in records:
                     time_code = record.time_code
                     data_dict = record.data_dict
-                    gdp_info = data_dict.get(gdp_field)
+                    gdp_info = data_dict.get(gdp)
 
                     if gdp_info and "data" in gdp_info:
                         result.append([time_code, gdp_info["data"]])
@@ -1850,59 +1523,23 @@ class economy:
                 self.stretch_method = "average"
                 self.from_macro = fin.from_macro
                 self.to_macro = fin.to_macro
-                self.gdp_mapping = {
-                    key: key
-                    for key in [
-                        "Tổng GDP_value",
-                        "Tổng GDP_Dịch vụ_value",
-                        "Tổng GDP_Công nghiệp và xây dựng_value",
-                        "Tổng GDP_Dịch vụ_Vận tải, kho bãi_value",
-                        "Tổng GDP_Nông, lâm nghiệp và thủy sản_value",
-                        "Tổng GDP_Dịch vụ_Giáo dục và đào tạo_value",
-                        "Tổng GDP_Công nghiệp và xây dựng_Xây dựng_value",
-                        "Tổng GDP_Dịch vụ_Thông tin và truyền thông_value",
-                        "Tổng GDP_Dịch vụ_Hoạt động dịch vụ khác_value",
-                        "Tổng GDP_Công nghiệp và xây dựng_Công nghiệp_value",
-                        "Tổng GDP_Dịch vụ_Dịch vụ lưu trú và ăn uống_value",
-                        "Tổng GDP_Nông, lâm nghiệp và thủy sản_Thủy sản_value",
-                        "Tổng GDP_Thuế sản phẩm trừ trợ cấp sản phẩm_value",
-                        "Tổng GDP_Nông, lâm nghiệp và thủy sản_Lâm nghiệp_value",
-                        "Tổng GDP_Nông, lâm nghiệp và thủy sản_Nông nghiệp_value",
-                        "Tổng GDP_Dịch vụ_Nghệ thuật, vui chơi và giải trí_value",
-                        "Tổng GDP_Dịch vụ_Hoạt động kinh doanh bất động sản_value",
-                        "Tổng GDP_Công nghiệp và xây dựng_Công nghiệp_Khai khoáng_value",
-                        "Tổng GDP_Dịch vụ_Y tế và hoạt động trợ giúp xã hội_value",
-                        "Tổng GDP_Dịch vụ_Hoạt động hành chính và dịch vụ hỗ trợ_value",
-                        "Tổng GDP_Dịch vụ_Hoạt động chuyên môn, khoa học và công nghệ_value",
-                        "Tổng GDP_Dịch vụ_Hoạt động tài chính, ngân hàng và bảo hiểm_value",
-                        "Tổng GDP_Công nghiệp và xây dựng_Công nghiệp_Công nghiệp chế biến, chế tạo_value",
-                        "Tổng GDP_Dịch vụ_Bán buôn và bán lẻ; sửa chữa ô tô, mô tô, xe máy và xe có động cơ khác_value",
-                        "Tổng GDP_Công nghiệp và xây dựng_Công nghiệp_Cung cấp nước; hoạt động quản lý và xử lý rác thải, nước thải_value",
-                        "Tổng GDP_Công nghiệp và xây dựng_Công nghiệp_Sản xuất và phân phối điện, khí đốt, nước nóng, hơi nước và điều hòa không khí_value",
-                        "Tổng GDP_Dịch vụ_Hoạt động của Đảng Cộng sản, tổ chức chính trị-xã hội; quản lý Nhà nước, an ninh quốc phòng; đảm bảo xã hội bắt buộc_value",
-                        "Tổng GDP_Dịch vụ_Hoạt động làm thuê các công việc trong các hộ gia đình, sản xuất sản phẩm vật chất và dịch vụ tự tiêu dùng của hộ gia đình_value",
-                    ]
-                }
-                # self.industry_keys =
                 self.from_date = fin._parse_macro(self.from_macro)
                 self.to_date = fin._parse_macro(self.to_macro, end=True)
                 self.stretch_method = "average"
                 self.data_arr = self._load_data(self.gdp)
 
             def _load_data(self, gdp):
-                gdp_field = self.gdp_mapping.get(gdp)
-                if not gdp_field:
-                    raise ValueError(f"{gdp_field} không hợp lệ.")
-
                 records = db.importing_objs("Economy", data_name="gdp_nominal")
                 if len(records) == 0:
                     return []
-
+                sample_record = next((r for r in records if r.data_dict), None)
+                if sample_record and gdp not in sample_record.data_dict:
+                    raise ValueError(f"{gdp} không tồn tại")
                 result = []
                 for record in records:
                     time_code = record.time_code
                     data_dict = record.data_dict
-                    gdp_info = data_dict.get(gdp_field)
+                    gdp_info = data_dict.get(gdp)
 
                     if gdp_info and "data" in gdp_info:
                         result.append([time_code, gdp_info["data"]])
@@ -1943,59 +1580,23 @@ class economy:
                 self.stretch_method = "average"
                 self.from_macro = fin.from_macro
                 self.to_macro = fin.to_macro
-                self.gdp_mapping = {
-                    key: key
-                    for key in [
-                        "Tổng GDP",
-                        "Tổng GDP_Dịch vụ",
-                        "Tổng GDP_Công nghiệp và xây dựng",
-                        "Tổng GDP_Dịch vụ_Vận tải, kho bãi",
-                        "Tổng GDP_Nông, lâm nghiệp và thủy sản",
-                        "Tổng GDP_Dịch vụ_Giáo dục và đào tạo",
-                        "Tổng GDP_Công nghiệp và xây dựng_Xây dựng",
-                        "Tổng GDP_Dịch vụ_Thông tin và truyền thông",
-                        "Tổng GDP_Dịch vụ_Hoạt động dịch vụ khác",
-                        "Tổng GDP_Công nghiệp và xây dựng_Công nghiệp",
-                        "Tổng GDP_Dịch vụ_Dịch vụ lưu trú và ăn uống",
-                        "Tổng GDP_Nông, lâm nghiệp và thủy sản_Thủy sản",
-                        "Tổng GDP_Thuế sản phẩm trừ trợ cấp sản phẩm",
-                        "Tổng GDP_Nông, lâm nghiệp và thủy sản_Lâm nghiệp",
-                        "Tổng GDP_Nông, lâm nghiệp và thủy sản_Nông nghiệp",
-                        "Tổng GDP_Dịch vụ_Nghệ thuật, vui chơi và giải trí",
-                        "Tổng GDP_Dịch vụ_Hoạt động kinh doanh bất động sản",
-                        "Tổng GDP_Công nghiệp và xây dựng_Công nghiệp_Khai khoáng",
-                        "Tổng GDP_Dịch vụ_Y tế và hoạt động trợ giúp xã hội",
-                        "Tổng GDP_Dịch vụ_Hoạt động hành chính và dịch vụ hỗ trợ",
-                        "Tổng GDP_Dịch vụ_Hoạt động chuyên môn, khoa học và công nghệe",
-                        "Tổng GDP_Dịch vụ_Hoạt động tài chính, ngân hàng và bảo hiểm",
-                        "Tổng GDP_Công nghiệp và xây dựng_Công nghiệp_Công nghiệp chế biến, chế tạo",
-                        "Tổng GDP_Dịch vụ_Bán buôn và bán lẻ; sửa chữa ô tô, mô tô, xe máy và xe có động cơ khác",
-                        "Tổng GDP_Công nghiệp và xây dựng_Công nghiệp_Cung cấp nước; hoạt động quản lý và xử lý rác thải, nước thải",
-                        "Tổng GDP_Công nghiệp và xây dựng_Công nghiệp_Sản xuất và phân phối điện, khí đốt, nước nóng, hơi nước và điều hòa không khí",
-                        "Tổng GDP_Dịch vụ_Hoạt động của Đảng Cộng sản, tổ chức chính trị-xã hội; quản lý Nhà nước, an ninh quốc phòng; đảm bảo xã hội bắt buộc",
-                        "Tổng GDP_Dịch vụ_Hoạt động làm thuê các công việc trong các hộ gia đình, sản xuất sản phẩm vật chất và dịch vụ tự tiêu dùng của hộ gia đình",
-                    ]
-                }
-                # self.industry_keys =
                 self.from_date = fin._parse_macro(self.from_macro)
                 self.to_date = fin._parse_macro(self.to_macro, end=True)
                 self.stretch_method = "average"
                 self.data_arr = self._load_data(self.gdp)
 
             def _load_data(self, gdp):
-                gdp_field = self.gdp_mapping.get(gdp)
-                if not gdp_field:
-                    raise ValueError(f"{gdp_field} không hợp lệ.")
-
                 records = db.importing_objs("Economy", data_name="gdp_real_raw")
                 if len(records) == 0:
                     return []
-
+                sample_record = next((r for r in records if r.data_dict), None)
+                if sample_record and gdp not in sample_record.data_dict:
+                    raise ValueError(f"{gdp} không tồn tại")
                 result = []
                 for record in records:
                     time_code = record.time_code
                     data_dict = record.data_dict
-                    gdp_info = data_dict.get(gdp_field)
+                    gdp_info = data_dict.get(gdp)
 
                     if gdp_info and "data" in gdp_info:
                         result.append([time_code, gdp_info["data"]])
@@ -2035,51 +1636,12 @@ class economy:
                 self.gdp = gdp
                 self.stretch_method = "average"
                 self.from_macro = fin.from_macro
-                self.to_macro = fin.to_macro
-                self.gdp_mapping = {
-                    key: key
-                    for key in [
-                        "Tổng GDP",
-                        "Tổng GDP_Dịch vụ",
-                        "Tổng GDP_Công nghiệp và xây dựng",
-                        "Tổng GDP_Dịch vụ_Vận tải, kho bãi",
-                        "Tổng GDP_Nông, lâm nghiệp và thủy sản",
-                        "Tổng GDP_Dịch vụ_Giáo dục và đào tạo",
-                        "Tổng GDP_Công nghiệp và xây dựng_Xây dựng",
-                        "Tổng GDP_Dịch vụ_Thông tin và truyền thông",
-                        "Tổng GDP_Dịch vụ_Hoạt động dịch vụ khác",
-                        "Tổng GDP_Công nghiệp và xây dựng_Công nghiệp",
-                        "Tổng GDP_Dịch vụ_Dịch vụ lưu trú và ăn uống",
-                        "Tổng GDP_Nông, lâm nghiệp và thủy sản_Thủy sản",
-                        "Tổng GDP_Thuế sản phẩm trừ trợ cấp sản phẩm",
-                        "Tổng GDP_Nông, lâm nghiệp và thủy sản_Lâm nghiệp",
-                        "Tổng GDP_Nông, lâm nghiệp và thủy sản_Nông nghiệp",
-                        "Tổng GDP_Dịch vụ_Nghệ thuật, vui chơi và giải trí",
-                        "Tổng GDP_Dịch vụ_Hoạt động kinh doanh bất động sản",
-                        "Tổng GDP_Công nghiệp và xây dựng_Công nghiệp_Khai khoáng",
-                        "Tổng GDP_Dịch vụ_Y tế và hoạt động trợ giúp xã hội",
-                        "Tổng GDP_Dịch vụ_Hoạt động hành chính và dịch vụ hỗ trợ",
-                        "Tổng GDP_Dịch vụ_Hoạt động chuyên môn, khoa học và công nghệe",
-                        "Tổng GDP_Dịch vụ_Hoạt động tài chính, ngân hàng và bảo hiểm",
-                        "Tổng GDP_Công nghiệp và xây dựng_Công nghiệp_Công nghiệp chế biến, chế tạo",
-                        "Tổng GDP_Dịch vụ_Bán buôn và bán lẻ; sửa chữa ô tô, mô tô, xe máy và xe có động cơ khác",
-                        "Tổng GDP_Công nghiệp và xây dựng_Công nghiệp_Cung cấp nước; hoạt động quản lý và xử lý rác thải, nước thải",
-                        "Tổng GDP_Công nghiệp và xây dựng_Công nghiệp_Sản xuất và phân phối điện, khí đốt, nước nóng, hơi nước và điều hòa không khí",
-                        "Tổng GDP_Dịch vụ_Hoạt động của Đảng Cộng sản, tổ chức chính trị-xã hội; quản lý Nhà nước, an ninh quốc phòng; đảm bảo xã hội bắt buộc",
-                        "Tổng GDP_Dịch vụ_Hoạt động làm thuê các công việc trong các hộ gia đình, sản xuất sản phẩm vật chất và dịch vụ tự tiêu dùng của hộ gia đình",
-                    ]
-                }
-                # self.industry_keys =
-                self.from_date = fin._parse_macro(self.from_macro)
+                self.to_macro = fin.to_macroself.from_date = fin._parse_macro(self.from_macro)
                 self.to_date = fin._parse_macro(self.to_macro, end=True)
                 self.stretch_method = "average"
                 self.data_arr = self._load_data(self.gdp)
 
             def _load_data(self, gdp):
-                gdp_field = self.gdp_mapping.get(gdp)
-                if not gdp_field:
-                    raise ValueError(f"{gdp_field} không hợp lệ.")
-
                 records = db.importing_objs("Economy", data_name="gdp_real_yoy")
                 if len(records) == 0:
                     return []
@@ -2088,7 +1650,7 @@ class economy:
                 for record in records:
                     time_code = record.time_code
                     data_dict = record.data_dict
-                    gdp_info = data_dict.get(gdp_field)
+                    gdp_info = data_dict.get(gdp)
 
                     if gdp_info and "data" in gdp_info:
                         result.append([time_code, gdp_info["data"]])
@@ -2129,59 +1691,23 @@ class economy:
                 self.stretch_method = "average"
                 self.from_macro = fin.from_macro
                 self.to_macro = fin.to_macro
-                self.gdp_mapping = {
-                    key: key
-                    for key in [
-                        "Tổng GDP",
-                        "Tổng GDP_Dịch vụ",
-                        "Tổng GDP_Công nghiệp và xây dựng",
-                        "Tổng GDP_Dịch vụ_Vận tải, kho bãi",
-                        "Tổng GDP_Nông, lâm nghiệp và thủy sản",
-                        "Tổng GDP_Dịch vụ_Giáo dục và đào tạo",
-                        "Tổng GDP_Công nghiệp và xây dựng_Xây dựng",
-                        "Tổng GDP_Dịch vụ_Thông tin và truyền thông",
-                        "Tổng GDP_Dịch vụ_Hoạt động dịch vụ khác",
-                        "Tổng GDP_Công nghiệp và xây dựng_Công nghiệp",
-                        "Tổng GDP_Dịch vụ_Dịch vụ lưu trú và ăn uống",
-                        "Tổng GDP_Nông, lâm nghiệp và thủy sản_Thủy sản",
-                        "Tổng GDP_Thuế sản phẩm trừ trợ cấp sản phẩm",
-                        "Tổng GDP_Nông, lâm nghiệp và thủy sản_Lâm nghiệp",
-                        "Tổng GDP_Nông, lâm nghiệp và thủy sản_Nông nghiệp",
-                        "Tổng GDP_Dịch vụ_Nghệ thuật, vui chơi và giải trí",
-                        "Tổng GDP_Dịch vụ_Hoạt động kinh doanh bất động sản",
-                        "Tổng GDP_Công nghiệp và xây dựng_Công nghiệp_Khai khoáng",
-                        "Tổng GDP_Dịch vụ_Y tế và hoạt động trợ giúp xã hội",
-                        "Tổng GDP_Dịch vụ_Hoạt động hành chính và dịch vụ hỗ trợ",
-                        "Tổng GDP_Dịch vụ_Hoạt động chuyên môn, khoa học và công nghệe",
-                        "Tổng GDP_Dịch vụ_Hoạt động tài chính, ngân hàng và bảo hiểm",
-                        "Tổng GDP_Công nghiệp và xây dựng_Công nghiệp_Công nghiệp chế biến, chế tạo",
-                        "Tổng GDP_Dịch vụ_Bán buôn và bán lẻ; sửa chữa ô tô, mô tô, xe máy và xe có động cơ khác",
-                        "Tổng GDP_Công nghiệp và xây dựng_Công nghiệp_Cung cấp nước; hoạt động quản lý và xử lý rác thải, nước thải",
-                        "Tổng GDP_Công nghiệp và xây dựng_Công nghiệp_Sản xuất và phân phối điện, khí đốt, nước nóng, hơi nước và điều hòa không khí",
-                        "Tổng GDP_Dịch vụ_Hoạt động của Đảng Cộng sản, tổ chức chính trị-xã hội; quản lý Nhà nước, an ninh quốc phòng; đảm bảo xã hội bắt buộc",
-                        "Tổng GDP_Dịch vụ_Hoạt động làm thuê các công việc trong các hộ gia đình, sản xuất sản phẩm vật chất và dịch vụ tự tiêu dùng của hộ gia đình",
-                    ]
-                }
-                # self.industry_keys =
                 self.from_date = fin._parse_macro(self.from_macro)
                 self.to_date = fin._parse_macro(self.to_macro, end=True)
                 self.stretch_method = "average"
                 self.data_arr = self._load_data(self.gdp)
 
             def _load_data(self, gdp):
-                gdp_field = self.gdp_mapping.get(gdp)
-                if not gdp_field:
-                    raise ValueError(f"{gdp_field} không hợp lệ.")
-
                 records = db.importing_objs("Economy", data_name="gdp_nominal_raw")
                 if len(records) == 0:
                     return []
-
+                sample_record = next((r for r in records if r.data_dict), None)
+                if sample_record and gdp not in sample_record.data_dict:
+                    raise ValueError(f"{gdp} không tồn tại")
                 result = []
                 for record in records:
                     time_code = record.time_code
                     data_dict = record.data_dict
-                    gdp_info = data_dict.get(gdp_field)
+                    gdp_info = data_dict.get(gdp)
 
                     if gdp_info and "data" in gdp_info:
                         result.append([time_code, gdp_info["data"]])
@@ -2222,59 +1748,23 @@ class economy:
                 self.stretch_method = "average"
                 self.from_macro = fin.from_macro
                 self.to_macro = fin.to_macro
-                self.gdp_mapping = {
-                    key: key
-                    for key in [
-                        "Tổng GDP",
-                        "Tổng GDP_Dịch vụ",
-                        "Tổng GDP_Công nghiệp và xây dựng",
-                        "Tổng GDP_Dịch vụ_Vận tải, kho bãi",
-                        "Tổng GDP_Nông, lâm nghiệp và thủy sản",
-                        "Tổng GDP_Dịch vụ_Giáo dục và đào tạo",
-                        "Tổng GDP_Công nghiệp và xây dựng_Xây dựng",
-                        "Tổng GDP_Dịch vụ_Thông tin và truyền thông",
-                        "Tổng GDP_Dịch vụ_Hoạt động dịch vụ khác",
-                        "Tổng GDP_Công nghiệp và xây dựng_Công nghiệp",
-                        "Tổng GDP_Dịch vụ_Dịch vụ lưu trú và ăn uống",
-                        "Tổng GDP_Nông, lâm nghiệp và thủy sản_Thủy sản",
-                        "Tổng GDP_Thuế sản phẩm trừ trợ cấp sản phẩm",
-                        "Tổng GDP_Nông, lâm nghiệp và thủy sản_Lâm nghiệp",
-                        "Tổng GDP_Nông, lâm nghiệp và thủy sản_Nông nghiệp",
-                        "Tổng GDP_Dịch vụ_Nghệ thuật, vui chơi và giải trí",
-                        "Tổng GDP_Dịch vụ_Hoạt động kinh doanh bất động sản",
-                        "Tổng GDP_Công nghiệp và xây dựng_Công nghiệp_Khai khoáng",
-                        "Tổng GDP_Dịch vụ_Y tế và hoạt động trợ giúp xã hội",
-                        "Tổng GDP_Dịch vụ_Hoạt động hành chính và dịch vụ hỗ trợ",
-                        "Tổng GDP_Dịch vụ_Hoạt động chuyên môn, khoa học và công nghệe",
-                        "Tổng GDP_Dịch vụ_Hoạt động tài chính, ngân hàng và bảo hiểm",
-                        "Tổng GDP_Công nghiệp và xây dựng_Công nghiệp_Công nghiệp chế biến, chế tạo",
-                        "Tổng GDP_Dịch vụ_Bán buôn và bán lẻ; sửa chữa ô tô, mô tô, xe máy và xe có động cơ khác",
-                        "Tổng GDP_Công nghiệp và xây dựng_Công nghiệp_Cung cấp nước; hoạt động quản lý và xử lý rác thải, nước thải",
-                        "Tổng GDP_Công nghiệp và xây dựng_Công nghiệp_Sản xuất và phân phối điện, khí đốt, nước nóng, hơi nước và điều hòa không khí",
-                        "Tổng GDP_Dịch vụ_Hoạt động của Đảng Cộng sản, tổ chức chính trị-xã hội; quản lý Nhà nước, an ninh quốc phòng; đảm bảo xã hội bắt buộc",
-                        "Tổng GDP_Dịch vụ_Hoạt động làm thuê các công việc trong các hộ gia đình, sản xuất sản phẩm vật chất và dịch vụ tự tiêu dùng của hộ gia đình",
-                    ]
-                }
-                # self.industry_keys =
                 self.from_date = fin._parse_macro(self.from_macro)
                 self.to_date = fin._parse_macro(self.to_macro, end=True)
                 self.stretch_method = "average"
                 self.data_arr = self._load_data(self.gdp)
 
             def _load_data(self, gdp):
-                gdp_field = self.gdp_mapping.get(gdp)
-                if not gdp_field:
-                    raise ValueError(f"{gdp_field} không hợp lệ.")
-
                 records = db.importing_objs("Economy", data_name="gdp_nominal_acc_yoy")
                 if len(records) == 0:
                     return []
-
+                sample_record = next((r for r in records if r.data_dict), None)
+                if sample_record and gdp not in sample_record.data_dict:
+                    raise ValueError(f"{gdp} không tồn tại")
                 result = []
                 for record in records:
                     time_code = record.time_code
                     data_dict = record.data_dict
-                    gdp_info = data_dict.get(gdp_field)
+                    gdp_info = data_dict.get(gdp)
 
                     if gdp_info and "data" in gdp_info:
                         result.append([time_code, gdp_info["data"]])
@@ -2315,59 +1805,23 @@ class economy:
                 self.stretch_method = "average"
                 self.from_macro = fin.from_macro
                 self.to_macro = fin.to_macro
-                self.gdp_mapping = {
-                    key: key
-                    for key in [
-                        "Tổng GDP",
-                        "Tổng GDP_Dịch vụ",
-                        "Tổng GDP_Công nghiệp và xây dựng",
-                        "Tổng GDP_Dịch vụ_Vận tải, kho bãi",
-                        "Tổng GDP_Nông, lâm nghiệp và thủy sản",
-                        "Tổng GDP_Dịch vụ_Giáo dục và đào tạo",
-                        "Tổng GDP_Công nghiệp và xây dựng_Xây dựng",
-                        "Tổng GDP_Dịch vụ_Thông tin và truyền thông",
-                        "Tổng GDP_Dịch vụ_Hoạt động dịch vụ khác",
-                        "Tổng GDP_Công nghiệp và xây dựng_Công nghiệp",
-                        "Tổng GDP_Dịch vụ_Dịch vụ lưu trú và ăn uống",
-                        "Tổng GDP_Nông, lâm nghiệp và thủy sản_Thủy sản",
-                        "Tổng GDP_Thuế sản phẩm trừ trợ cấp sản phẩm",
-                        "Tổng GDP_Nông, lâm nghiệp và thủy sản_Lâm nghiệp",
-                        "Tổng GDP_Nông, lâm nghiệp và thủy sản_Nông nghiệp",
-                        "Tổng GDP_Dịch vụ_Nghệ thuật, vui chơi và giải trí",
-                        "Tổng GDP_Dịch vụ_Hoạt động kinh doanh bất động sản",
-                        "Tổng GDP_Công nghiệp và xây dựng_Công nghiệp_Khai khoáng",
-                        "Tổng GDP_Dịch vụ_Y tế và hoạt động trợ giúp xã hội",
-                        "Tổng GDP_Dịch vụ_Hoạt động hành chính và dịch vụ hỗ trợ",
-                        "Tổng GDP_Dịch vụ_Hoạt động chuyên môn, khoa học và công nghệe",
-                        "Tổng GDP_Dịch vụ_Hoạt động tài chính, ngân hàng và bảo hiểm",
-                        "Tổng GDP_Công nghiệp và xây dựng_Công nghiệp_Công nghiệp chế biến, chế tạo",
-                        "Tổng GDP_Dịch vụ_Bán buôn và bán lẻ; sửa chữa ô tô, mô tô, xe máy và xe có động cơ khác",
-                        "Tổng GDP_Công nghiệp và xây dựng_Công nghiệp_Cung cấp nước; hoạt động quản lý và xử lý rác thải, nước thải",
-                        "Tổng GDP_Công nghiệp và xây dựng_Công nghiệp_Sản xuất và phân phối điện, khí đốt, nước nóng, hơi nước và điều hòa không khí",
-                        "Tổng GDP_Dịch vụ_Hoạt động của Đảng Cộng sản, tổ chức chính trị-xã hội; quản lý Nhà nước, an ninh quốc phòng; đảm bảo xã hội bắt buộc",
-                        "Tổng GDP_Dịch vụ_Hoạt động làm thuê các công việc trong các hộ gia đình, sản xuất sản phẩm vật chất và dịch vụ tự tiêu dùng của hộ gia đình",
-                    ]
-                }
-                # self.industry_keys =
                 self.from_date = fin._parse_macro(self.from_macro)
                 self.to_date = fin._parse_macro(self.to_macro, end=True)
                 self.stretch_method = "average"
                 self.data_arr = self._load_data(self.gdp)
 
             def _load_data(self, gdp):
-                gdp_field = self.gdp_mapping.get(gdp)
-                if not gdp_field:
-                    raise ValueError(f"{gdp_field} không hợp lệ.")
-
                 records = db.importing_objs("Economy", data_name="gdp_nominal_yoy")
                 if len(records) == 0:
                     return []
-
+                sample_record = next((r for r in records if r.data_dict), None)
+                if sample_record and gdp not in sample_record.data_dict:
+                    raise ValueError(f"{gdp} không tồn tại")
                 result = []
                 for record in records:
                     time_code = record.time_code
                     data_dict = record.data_dict
-                    gdp_info = data_dict.get(gdp_field)
+                    gdp_info = data_dict.get(gdp)
 
                     if gdp_info and "data" in gdp_info:
                         result.append([time_code, gdp_info["data"]])
@@ -2408,50 +1862,12 @@ class economy:
                 self.stretch_method = "average"
                 self.from_macro = fin.from_macro
                 self.to_macro = fin.to_macro
-                self.gdp_mapping = {
-                    key: key
-                    for key in [
-                        "Tổng GDP",
-                        "Tổng GDP_Dịch vụ",
-                        "Tổng GDP_Công nghiệp và xây dựng",
-                        "Tổng GDP_Dịch vụ_Vận tải, kho bãi",
-                        "Tổng GDP_Nông, lâm nghiệp và thủy sản",
-                        "Tổng GDP_Dịch vụ_Giáo dục và đào tạo",
-                        "Tổng GDP_Công nghiệp và xây dựng_Xây dựng",
-                        "Tổng GDP_Dịch vụ_Thông tin và truyền thông",
-                        "Tổng GDP_Dịch vụ_Hoạt động dịch vụ khác",
-                        "Tổng GDP_Công nghiệp và xây dựng_Công nghiệp",
-                        "Tổng GDP_Dịch vụ_Dịch vụ lưu trú và ăn uống",
-                        "Tổng GDP_Nông, lâm nghiệp và thủy sản_Thủy sản",
-                        "Tổng GDP_Thuế sản phẩm trừ trợ cấp sản phẩm",
-                        "Tổng GDP_Nông, lâm nghiệp và thủy sản_Lâm nghiệp",
-                        "Tổng GDP_Nông, lâm nghiệp và thủy sản_Nông nghiệp",
-                        "Tổng GDP_Dịch vụ_Nghệ thuật, vui chơi và giải trí",
-                        "Tổng GDP_Dịch vụ_Hoạt động kinh doanh bất động sản",
-                        "Tổng GDP_Công nghiệp và xây dựng_Công nghiệp_Khai khoáng",
-                        "Tổng GDP_Dịch vụ_Y tế và hoạt động trợ giúp xã hội",
-                        "Tổng GDP_Dịch vụ_Hoạt động hành chính và dịch vụ hỗ trợ",
-                        "Tổng GDP_Dịch vụ_Hoạt động chuyên môn, khoa học và công nghệe",
-                        "Tổng GDP_Dịch vụ_Hoạt động tài chính, ngân hàng và bảo hiểm",
-                        "Tổng GDP_Công nghiệp và xây dựng_Công nghiệp_Công nghiệp chế biến, chế tạo",
-                        "Tổng GDP_Dịch vụ_Bán buôn và bán lẻ; sửa chữa ô tô, mô tô, xe máy và xe có động cơ khác",
-                        "Tổng GDP_Công nghiệp và xây dựng_Công nghiệp_Cung cấp nước; hoạt động quản lý và xử lý rác thải, nước thải",
-                        "Tổng GDP_Công nghiệp và xây dựng_Công nghiệp_Sản xuất và phân phối điện, khí đốt, nước nóng, hơi nước và điều hòa không khí",
-                        "Tổng GDP_Dịch vụ_Hoạt động của Đảng Cộng sản, tổ chức chính trị-xã hội; quản lý Nhà nước, an ninh quốc phòng; đảm bảo xã hội bắt buộc",
-                        "Tổng GDP_Dịch vụ_Hoạt động làm thuê các công việc trong các hộ gia đình, sản xuất sản phẩm vật chất và dịch vụ tự tiêu dùng của hộ gia đình",
-                    ]
-                }
-                # self.industry_keys =
                 self.from_date = fin._parse_macro(self.from_macro)
                 self.to_date = fin._parse_macro(self.to_macro, end=True)
                 self.stretch_method = "average"
                 self.data_arr = self._load_data(self.gdp)
 
             def _load_data(self, gdp):
-                gdp_field = self.gdp_mapping.get(gdp)
-                if not gdp_field:
-                    raise ValueError(f"{gdp_field} không hợp lệ.")
-
                 records = db.importing_objs("Economy", data_name="gdp_nominal_acc_raw")
                 if len(records) == 0:
                     return []
@@ -2460,7 +1876,7 @@ class economy:
                 for record in records:
                     time_code = record.time_code
                     data_dict = record.data_dict
-                    gdp_info = data_dict.get(gdp_field)
+                    gdp_info = data_dict.get(gdp)
 
                     if gdp_info and "data" in gdp_info:
                         result.append([time_code, gdp_info["data"]])
@@ -2501,59 +1917,23 @@ class economy:
                 self.stretch_method = "average"
                 self.from_macro = fin.from_macro
                 self.to_macro = fin.to_macro
-                self.gdp_mapping = {
-                    key: key
-                    for key in [
-                        "Tổng GDP",
-                        "Tổng GDP_Dịch vụ",
-                        "Tổng GDP_Công nghiệp và xây dựng",
-                        "Tổng GDP_Dịch vụ_Vận tải, kho bãi",
-                        "Tổng GDP_Nông, lâm nghiệp và thủy sản",
-                        "Tổng GDP_Dịch vụ_Giáo dục và đào tạo",
-                        "Tổng GDP_Công nghiệp và xây dựng_Xây dựng",
-                        "Tổng GDP_Dịch vụ_Thông tin và truyền thông",
-                        "Tổng GDP_Dịch vụ_Hoạt động dịch vụ khác",
-                        "Tổng GDP_Công nghiệp và xây dựng_Công nghiệp",
-                        "Tổng GDP_Dịch vụ_Dịch vụ lưu trú và ăn uống",
-                        "Tổng GDP_Nông, lâm nghiệp và thủy sản_Thủy sản",
-                        "Tổng GDP_Thuế sản phẩm trừ trợ cấp sản phẩm",
-                        "Tổng GDP_Nông, lâm nghiệp và thủy sản_Lâm nghiệp",
-                        "Tổng GDP_Nông, lâm nghiệp và thủy sản_Nông nghiệp",
-                        "Tổng GDP_Dịch vụ_Nghệ thuật, vui chơi và giải trí",
-                        "Tổng GDP_Dịch vụ_Hoạt động kinh doanh bất động sản",
-                        "Tổng GDP_Công nghiệp và xây dựng_Công nghiệp_Khai khoáng",
-                        "Tổng GDP_Dịch vụ_Y tế và hoạt động trợ giúp xã hội",
-                        "Tổng GDP_Dịch vụ_Hoạt động hành chính và dịch vụ hỗ trợ",
-                        "Tổng GDP_Dịch vụ_Hoạt động chuyên môn, khoa học và công nghệe",
-                        "Tổng GDP_Dịch vụ_Hoạt động tài chính, ngân hàng và bảo hiểm",
-                        "Tổng GDP_Công nghiệp và xây dựng_Công nghiệp_Công nghiệp chế biến, chế tạo",
-                        "Tổng GDP_Dịch vụ_Bán buôn và bán lẻ; sửa chữa ô tô, mô tô, xe máy và xe có động cơ khác",
-                        "Tổng GDP_Công nghiệp và xây dựng_Công nghiệp_Cung cấp nước; hoạt động quản lý và xử lý rác thải, nước thải",
-                        "Tổng GDP_Công nghiệp và xây dựng_Công nghiệp_Sản xuất và phân phối điện, khí đốt, nước nóng, hơi nước và điều hòa không khí",
-                        "Tổng GDP_Dịch vụ_Hoạt động của Đảng Cộng sản, tổ chức chính trị-xã hội; quản lý Nhà nước, an ninh quốc phòng; đảm bảo xã hội bắt buộc",
-                        "Tổng GDP_Dịch vụ_Hoạt động làm thuê các công việc trong các hộ gia đình, sản xuất sản phẩm vật chất và dịch vụ tự tiêu dùng của hộ gia đình",
-                    ]
-                }
-                # self.industry_keys =
                 self.from_date = fin._parse_macro(self.from_macro)
                 self.to_date = fin._parse_macro(self.to_macro, end=True)
                 self.stretch_method = "average"
                 self.data_arr = self._load_data(self.gdp)
 
             def _load_data(self, gdp):
-                gdp_field = self.gdp_mapping.get(gdp)
-                if not gdp_field:
-                    raise ValueError(f"{gdp_field} không hợp lệ.")
-
                 records = db.importing_objs("Economy", data_name="gdp_real_acc_yoy")
                 if len(records) == 0:
                     return []
-
+                sample_record = next((r for r in records if r.data_dict), None)
+                if sample_record and gdp not in sample_record.data_dict:
+                    raise ValueError(f"{gdp} không tồn tại")
                 result = []
                 for record in records:
                     time_code = record.time_code
                     data_dict = record.data_dict
-                    gdp_info = data_dict.get(gdp_field)
+                    gdp_info = data_dict.get(gdp)
 
                     if gdp_info and "data" in gdp_info:
                         result.append([time_code, gdp_info["data"]])
@@ -2594,59 +1974,23 @@ class economy:
                 self.stretch_method = "average"
                 self.from_macro = fin.from_macro
                 self.to_macro = fin.to_macro
-                self.gdp_mapping = {
-                    key: key
-                    for key in [
-                        "Tổng GDP",
-                        "Tổng GDP_Dịch vụ",
-                        "Tổng GDP_Công nghiệp và xây dựng",
-                        "Tổng GDP_Dịch vụ_Vận tải, kho bãi",
-                        "Tổng GDP_Nông, lâm nghiệp và thủy sản",
-                        "Tổng GDP_Dịch vụ_Giáo dục và đào tạo",
-                        "Tổng GDP_Công nghiệp và xây dựng_Xây dựng",
-                        "Tổng GDP_Dịch vụ_Thông tin và truyền thông",
-                        "Tổng GDP_Dịch vụ_Hoạt động dịch vụ khác",
-                        "Tổng GDP_Công nghiệp và xây dựng_Công nghiệp",
-                        "Tổng GDP_Dịch vụ_Dịch vụ lưu trú và ăn uống",
-                        "Tổng GDP_Nông, lâm nghiệp và thủy sản_Thủy sản",
-                        "Tổng GDP_Thuế sản phẩm trừ trợ cấp sản phẩm",
-                        "Tổng GDP_Nông, lâm nghiệp và thủy sản_Lâm nghiệp",
-                        "Tổng GDP_Nông, lâm nghiệp và thủy sản_Nông nghiệp",
-                        "Tổng GDP_Dịch vụ_Nghệ thuật, vui chơi và giải trí",
-                        "Tổng GDP_Dịch vụ_Hoạt động kinh doanh bất động sản",
-                        "Tổng GDP_Công nghiệp và xây dựng_Công nghiệp_Khai khoáng",
-                        "Tổng GDP_Dịch vụ_Y tế và hoạt động trợ giúp xã hội",
-                        "Tổng GDP_Dịch vụ_Hoạt động hành chính và dịch vụ hỗ trợ",
-                        "Tổng GDP_Dịch vụ_Hoạt động chuyên môn, khoa học và công nghệe",
-                        "Tổng GDP_Dịch vụ_Hoạt động tài chính, ngân hàng và bảo hiểm",
-                        "Tổng GDP_Công nghiệp và xây dựng_Công nghiệp_Công nghiệp chế biến, chế tạo",
-                        "Tổng GDP_Dịch vụ_Bán buôn và bán lẻ; sửa chữa ô tô, mô tô, xe máy và xe có động cơ khác",
-                        "Tổng GDP_Công nghiệp và xây dựng_Công nghiệp_Cung cấp nước; hoạt động quản lý và xử lý rác thải, nước thải",
-                        "Tổng GDP_Công nghiệp và xây dựng_Công nghiệp_Sản xuất và phân phối điện, khí đốt, nước nóng, hơi nước và điều hòa không khí",
-                        "Tổng GDP_Dịch vụ_Hoạt động của Đảng Cộng sản, tổ chức chính trị-xã hội; quản lý Nhà nước, an ninh quốc phòng; đảm bảo xã hội bắt buộc",
-                        "Tổng GDP_Dịch vụ_Hoạt động làm thuê các công việc trong các hộ gia đình, sản xuất sản phẩm vật chất và dịch vụ tự tiêu dùng của hộ gia đình",
-                    ]
-                }
-                # self.industry_keys =
                 self.from_date = fin._parse_macro(self.from_macro)
                 self.to_date = fin._parse_macro(self.to_macro, end=True)
                 self.stretch_method = "average"
                 self.data_arr = self._load_data(self.gdp)
 
             def _load_data(self, gdp):
-                gdp_field = self.gdp_mapping.get(gdp)
-                if not gdp_field:
-                    raise ValueError(f"{gdp_field} không hợp lệ.")
-
                 records = db.importing_objs("Economy", data_name="gdp_real_acc_raw")
                 if len(records) == 0:
                     return []
-
+                sample_record = next((r for r in records if r.data_dict), None)
+                if sample_record and gdp not in sample_record.data_dict:
+                    raise ValueError(f"{gdp} không tồn tại")
                 result = []
                 for record in records:
                     time_code = record.time_code
                     data_dict = record.data_dict
-                    gdp_info = data_dict.get(gdp_field)
+                    gdp_info = data_dict.get(gdp)
 
                     if gdp_info and "data" in gdp_info:
                         result.append([time_code, gdp_info["data"]])
@@ -2686,67 +2030,23 @@ class economy:
                 self.iip_type = iip_type
                 self.from_macro = fin.from_macro
                 self.to_macro = fin.to_macro
-                self.iip_type_mapping = {
-                    key: key
-                    for key in [
-                        "Toàn ngành công nghiệp ",
-                        "Sản xuất xe có động cơ ",
-                        "Toàn ngành công nghiệp _Khai khoáng ",
-                        "Toàn ngành công nghiệp _Khai khoáng _Khai khoáng khác ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo ",
-                        "Toàn ngành công nghiệp _Khai khoáng _Khai thác quặng kim loại ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Dệt ",
-                        "Toàn ngành công nghiệp _Khai khoáng _Khai thác than cứng và than non ",
-                        "Toàn ngành công nghiệp _Khai khoáng _Khai thác dầu thô và khí đốt tự nhiên ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất kim loại ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất trang phục ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất đồ uống ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất thiết bị điện ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _In, sao chép bản ghi các loại ",
-                        "Toàn ngành công nghiệp _Khai khoáng _Hoạt động dịch vụ hỗ trợ khai thác mỏ và quặng ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất sản phẩm thuốc lá ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất chế biến thực phẩm ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất giường, tủ, bàn, ghế ",
-                        "Toàn ngành công nghiệp _Cung cấp nước; hoạt động quản lý và xử lý rác thải, nước thải ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Công nghiệp chế biến, chế tạo khác ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất phương tiện vận tải khác ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất giấy và sản phẩm từ giấy ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất sản phẩm từ cao su và plastic ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất da và các sản phẩm có liên quan ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất hoá chất và sản phẩm hoá chất ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất thuốc, hoá dược và dược liệu ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất sản phẩm từ khoáng phi kim loại khác ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất than cốc, sản phẩm dầu mỏ tinh chế ",
-                        "Toàn ngành công nghiệp _Sản xuất và phân phối điện, khí đốt, nước nóng, hơi nước và điều hoà không khí ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất máy móc, thiết bị chưa được phân vào đâu ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sửa chữa, bảo dưỡng và lắp đặt máy móc và thiết bị ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất sản phẩm điện tử, máy vi tính và sản phẩm quang học ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất sản phẩm từ kim loại đúc sẵn (trừ máy móc, thiết bị) ",
-                        "Toàn ngành công nghiệp _Cung cấp nước; hoạt động quản lý và xử lý rác thải, nước thải _Thoát nước và xử lý nước thải ",
-                        "Toàn ngành công nghiệp _Cung cấp nước; hoạt động quản lý và xử lý rác thải, nước thải _Khai thác, xử lý và cung cấp nước ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _CB gỗ và sx sp từ gỗ, tre, nứa (trừ giường, tủ, bàn, ghế); sx sp từ rơm, rạ và vật liệu tết bện ",
-                        "Toàn ngành công nghiệp _Cung cấp nước; hoạt động quản lý và xử lý rác thải, nước thải _Hoạt động thu gom, xử lý và tiêu huỷ rác thải; tái chế phế liệu ",
-                    ]
-                }
                 self.from_date = fin._parse_macro(self.from_macro)
                 self.to_date = fin._parse_macro(self.to_macro, end=True)
                 self.stretch_method = "last"
                 self.data_arr = self._load_data(self.iip_type)
 
             def _load_data(self, iip_type):
-                iip_type_field = self.iip_type_mapping.get(iip_type)
-                if not iip_type_field:
-                    raise ValueError(f"{iip_type} không hợp lệ.")
-
                 records = db.importing_objs("Economy", data_name="iip_qoq")
                 if len(records) == 0:
                     return []
-
+                sample_record = next((r for r in records if r.data_dict), None)
+                if sample_record and iip_type not in sample_record.data_dict:
+                    raise ValueError(f"{iip_type} không tồn tại")
                 result = []
                 for record in records:
                     time_code = record.time_code
                     data_dict = record.data_dict
-                    iip_type_info = data_dict.get(iip_type_field)
+                    iip_type_info = data_dict.get(iip_type)
 
                     if iip_type_info and "data" in iip_type_info:
                         result.append([time_code, iip_type_info["data"]])
@@ -2786,67 +2086,23 @@ class economy:
                 self.iip_type = iip_type
                 self.from_macro = fin.from_macro
                 self.to_macro = fin.to_macro
-                self.iip_type_mapping = {
-                    key: key
-                    for key in [
-                        "Toàn ngành công nghiệp ",
-                        "Sản xuất xe có động cơ ",
-                        "Toàn ngành công nghiệp _Khai khoáng ",
-                        "Toàn ngành công nghiệp _Khai khoáng _Khai khoáng khác ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo ",
-                        "Toàn ngành công nghiệp _Khai khoáng _Khai thác quặng kim loại ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Dệt ",
-                        "Toàn ngành công nghiệp _Khai khoáng _Khai thác than cứng và than non ",
-                        "Toàn ngành công nghiệp _Khai khoáng _Khai thác dầu thô và khí đốt tự nhiên ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất kim loại ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất trang phục ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất đồ uống ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất thiết bị điện ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _In, sao chép bản ghi các loại ",
-                        "Toàn ngành công nghiệp _Khai khoáng _Hoạt động dịch vụ hỗ trợ khai thác mỏ và quặng ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất sản phẩm thuốc lá ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất chế biến thực phẩm ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất giường, tủ, bàn, ghế ",
-                        "Toàn ngành công nghiệp _Cung cấp nước; hoạt động quản lý và xử lý rác thải, nước thải ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Công nghiệp chế biến, chế tạo khác ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất phương tiện vận tải khác ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất giấy và sản phẩm từ giấy ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất sản phẩm từ cao su và plastic ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất da và các sản phẩm có liên quan ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất hoá chất và sản phẩm hoá chất ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất thuốc, hoá dược và dược liệu ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất sản phẩm từ khoáng phi kim loại khác ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất than cốc, sản phẩm dầu mỏ tinh chế ",
-                        "Toàn ngành công nghiệp _Sản xuất và phân phối điện, khí đốt, nước nóng, hơi nước và điều hoà không khí ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất máy móc, thiết bị chưa được phân vào đâu ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sửa chữa, bảo dưỡng và lắp đặt máy móc và thiết bị ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất sản phẩm điện tử, máy vi tính và sản phẩm quang học ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất sản phẩm từ kim loại đúc sẵn (trừ máy móc, thiết bị) ",
-                        "Toàn ngành công nghiệp _Cung cấp nước; hoạt động quản lý và xử lý rác thải, nước thải _Thoát nước và xử lý nước thải ",
-                        "Toàn ngành công nghiệp _Cung cấp nước; hoạt động quản lý và xử lý rác thải, nước thải _Khai thác, xử lý và cung cấp nước ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _CB gỗ và sx sp từ gỗ, tre, nứa (trừ giường, tủ, bàn, ghế); sx sp từ rơm, rạ và vật liệu tết bện ",
-                        "Toàn ngành công nghiệp _Cung cấp nước; hoạt động quản lý và xử lý rác thải, nước thải _Hoạt động thu gom, xử lý và tiêu huỷ rác thải; tái chế phế liệu ",
-                    ]
-                }
                 self.from_date = fin._parse_macro(self.from_macro)
                 self.to_date = fin._parse_macro(self.to_macro, end=True)
                 self.stretch_method = "last"
                 self.data_arr = self._load_data(self.iip_type)
 
             def _load_data(self, iip_type):
-                iip_type_field = self.iip_type_mapping.get(iip_type)
-                if not iip_type_field:
-                    raise ValueError(f"{iip_type} không hợp lệ.")
-
                 records = db.importing_objs("ECONOMY", data_name="iip_mom")
                 if len(records) == 0:
                     return []
-
+                sample_record = next((r for r in records if r.data_dict), None)
+                if sample_record and iip_type not in sample_record.data_dict:
+                    raise ValueError(f"{iip_type} không tồn tại")
                 result = []
                 for record in records:
                     time_code = record.time_code
                     data_dict = record.data_dict
-                    iip_type_info = data_dict.get(iip_type_field)
+                    iip_type_info = data_dict.get(iip_type)
 
                     if iip_type_info and "data" in iip_type_info:
                         result.append([time_code, iip_type_info["data"]])
@@ -2886,67 +2142,23 @@ class economy:
                 self.iip_type = iip_type
                 self.from_macro = fin.from_macro
                 self.to_macro = fin.to_macro
-                self.iip_type_mapping = {
-                    key: key
-                    for key in [
-                        "Toàn ngành công nghiệp ",
-                        "Sản xuất xe có động cơ ",
-                        "Toàn ngành công nghiệp _Khai khoáng ",
-                        "Toàn ngành công nghiệp _Khai khoáng _Khai khoáng khác ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo ",
-                        "Toàn ngành công nghiệp _Khai khoáng _Khai thác quặng kim loại ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Dệt ",
-                        "Toàn ngành công nghiệp _Khai khoáng _Khai thác than cứng và than non ",
-                        "Toàn ngành công nghiệp _Khai khoáng _Khai thác dầu thô và khí đốt tự nhiên ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất kim loại ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất trang phục ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất đồ uống ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất thiết bị điện ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _In, sao chép bản ghi các loại ",
-                        "Toàn ngành công nghiệp _Khai khoáng _Hoạt động dịch vụ hỗ trợ khai thác mỏ và quặng ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất sản phẩm thuốc lá ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất chế biến thực phẩm ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất giường, tủ, bàn, ghế ",
-                        "Toàn ngành công nghiệp _Cung cấp nước; hoạt động quản lý và xử lý rác thải, nước thải ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Công nghiệp chế biến, chế tạo khác ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất phương tiện vận tải khác ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất giấy và sản phẩm từ giấy ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất sản phẩm từ cao su và plastic ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất da và các sản phẩm có liên quan ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất hoá chất và sản phẩm hoá chất ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất thuốc, hoá dược và dược liệu ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất sản phẩm từ khoáng phi kim loại khác ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất than cốc, sản phẩm dầu mỏ tinh chế ",
-                        "Toàn ngành công nghiệp _Sản xuất và phân phối điện, khí đốt, nước nóng, hơi nước và điều hoà không khí ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất máy móc, thiết bị chưa được phân vào đâu ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sửa chữa, bảo dưỡng và lắp đặt máy móc và thiết bị ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất sản phẩm điện tử, máy vi tính và sản phẩm quang học ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất sản phẩm từ kim loại đúc sẵn (trừ máy móc, thiết bị) ",
-                        "Toàn ngành công nghiệp _Cung cấp nước; hoạt động quản lý và xử lý rác thải, nước thải _Thoát nước và xử lý nước thải ",
-                        "Toàn ngành công nghiệp _Cung cấp nước; hoạt động quản lý và xử lý rác thải, nước thải _Khai thác, xử lý và cung cấp nước ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _CB gỗ và sx sp từ gỗ, tre, nứa (trừ giường, tủ, bàn, ghế); sx sp từ rơm, rạ và vật liệu tết bện ",
-                        "Toàn ngành công nghiệp _Cung cấp nước; hoạt động quản lý và xử lý rác thải, nước thải _Hoạt động thu gom, xử lý và tiêu huỷ rác thải; tái chế phế liệu ",
-                    ]
-                }
                 self.from_date = fin._parse_macro(self.from_macro)
                 self.to_date = fin._parse_macro(self.to_macro, end=True)
                 self.stretch_method = "last"
                 self.data_arr = self._load_data(self.iip_type)
 
             def _load_data(self, iip_type):
-                iip_type_field = self.iip_type_mapping.get(iip_type)
-                if not iip_type_field:
-                    raise ValueError(f"{iip_type} không hợp lệ.")
-
                 records = db.importing_objs("Economy", data_name="iip_yoy")
                 if len(records) == 0:
                     return []
-
+                sample_record = next((r for r in records if r.data_dict), None)
+                if sample_record and iip_type not in sample_record.data_dict:
+                    raise ValueError(f"{iip_type} không tồn tại")
                 result = []
                 for record in records:
                     time_code = record.time_code
                     data_dict = record.data_dict
-                    iip_type_info = data_dict.get(iip_type_field)
+                    iip_type_info = data_dict.get(iip_type)
 
                     if iip_type_info and "data" in iip_type_info:
                         result.append([time_code, iip_type_info["data"]])
@@ -2986,67 +2198,23 @@ class economy:
                 self.iip_type = iip_type
                 self.from_macro = fin.from_macro
                 self.to_macro = fin.to_macro
-                self.iip_type_mapping = {
-                    key: key
-                    for key in [
-                        "Toàn ngành công nghiệp ",
-                        "Sản xuất xe có động cơ ",
-                        "Toàn ngành công nghiệp _Khai khoáng ",
-                        "Toàn ngành công nghiệp _Khai khoáng _Khai khoáng khác ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo ",
-                        "Toàn ngành công nghiệp _Khai khoáng _Khai thác quặng kim loại ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Dệt ",
-                        "Toàn ngành công nghiệp _Khai khoáng _Khai thác than cứng và than non ",
-                        "Toàn ngành công nghiệp _Khai khoáng _Khai thác dầu thô và khí đốt tự nhiên ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất kim loại ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất trang phục ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất đồ uống ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất thiết bị điện ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _In, sao chép bản ghi các loại ",
-                        "Toàn ngành công nghiệp _Khai khoáng _Hoạt động dịch vụ hỗ trợ khai thác mỏ và quặng ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất sản phẩm thuốc lá ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất chế biến thực phẩm ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất giường, tủ, bàn, ghế ",
-                        "Toàn ngành công nghiệp _Cung cấp nước; hoạt động quản lý và xử lý rác thải, nước thải ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Công nghiệp chế biến, chế tạo khác ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất phương tiện vận tải khác ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất giấy và sản phẩm từ giấy ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất sản phẩm từ cao su và plastic ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất da và các sản phẩm có liên quan ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất hoá chất và sản phẩm hoá chất ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất thuốc, hoá dược và dược liệu ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất sản phẩm từ khoáng phi kim loại khác ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất than cốc, sản phẩm dầu mỏ tinh chế ",
-                        "Toàn ngành công nghiệp _Sản xuất và phân phối điện, khí đốt, nước nóng, hơi nước và điều hoà không khí ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất máy móc, thiết bị chưa được phân vào đâu ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sửa chữa, bảo dưỡng và lắp đặt máy móc và thiết bị ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất sản phẩm điện tử, máy vi tính và sản phẩm quang học ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _Sản xuất sản phẩm từ kim loại đúc sẵn (trừ máy móc, thiết bị) ",
-                        "Toàn ngành công nghiệp _Cung cấp nước; hoạt động quản lý và xử lý rác thải, nước thải _Thoát nước và xử lý nước thải ",
-                        "Toàn ngành công nghiệp _Cung cấp nước; hoạt động quản lý và xử lý rác thải, nước thải _Khai thác, xử lý và cung cấp nước ",
-                        "Toàn ngành công nghiệp _Công nghiệp chế biến , chế tạo _CB gỗ và sx sp từ gỗ, tre, nứa (trừ giường, tủ, bàn, ghế); sx sp từ rơm, rạ và vật liệu tết bện ",
-                        "Toàn ngành công nghiệp _Cung cấp nước; hoạt động quản lý và xử lý rác thải, nước thải _Hoạt động thu gom, xử lý và tiêu huỷ rác thải; tái chế phế liệu ",
-                    ]
-                }
                 self.from_date = fin._parse_macro(self.from_macro)
                 self.to_date = fin._parse_macro(self.to_macro, end=True)
                 self.stretch_method = "last"
                 self.data_arr = self._load_data(self.iip_type)
 
             def _load_data(self, iip_type):
-                iip_type_field = self.iip_type_mapping.get(iip_type)
-                if not iip_type_field:
-                    raise ValueError(f"{iip_type} không hợp lệ.")
-
                 records = db.importing_objs("Economy", data_name="iip_acc_yoy")
                 if len(records) == 0:
                     return []
-
+                sample_record = next((r for r in records if r.data_dict), None)
+                if sample_record and iip_type not in sample_record.data_dict:
+                    raise ValueError(f"{iip_type} không tồn tại")
                 result = []
                 for record in records:
                     time_code = record.time_code
                     data_dict = record.data_dict
-                    iip_type_info = data_dict.get(iip_type_field)
+                    iip_type_info = data_dict.get(iip_type)
 
                     if iip_type_info and "data" in iip_type_info:
                         result.append([time_code, iip_type_info["data"]])
@@ -3086,42 +2254,23 @@ class economy:
                 self.transport_type = transport_type
                 self.from_macro = fin.from_macro
                 self.to_macro = fin.to_macro
-                self.transport_type_mapping = {
-                    key: key
-                    for key in [
-                        "Chỉ số giá vận tải, kho bãi",
-                        "Chỉ số giá vận tải, kho bãi_Dịch vụ vận tải đường thủy",
-                        "Chỉ số giá vận tải, kho bãi_Dịch vụ bưu chính và chuyển phát",
-                        "Chỉ số giá vận tải, kho bãi_Dịch vụ vận tải đường hàng không",
-                        "Chỉ số giá vận tải, kho bãi_Dịch vụ vận tải đường sắt, đường bộ",
-                        "Chỉ số giá vận tải, kho bãi_Dịch vụ kho bãi và các dịch vụ liên quan đến hỗ trợ vận tải",
-                        "Chỉ số giá vận tải, kho bãi_Dịch vụ vận tải đường sắt, đường bộ_Vận tải đường sắt",
-                        "Chỉ số giá vận tải, kho bãi_Dịch vụ vận tải đường thủy_Dịch vụ vận tải đường thủy nội địa",
-                        "Chỉ số giá vận tải, kho bãi_Dịch vụ vận tải đường sắt, đường bộ_Vận tải đường bộ và xe buýt",
-                        "Chỉ số giá vận tải, kho bãi_Dịch vụ vận tải đường thủy_Dịch vụ vận tải đường ven biển và viễn dương",
-                        "Chỉ số giá vận tải, kho bãi_Dịch vụ kho bãi và các dịch vụ liên quan đến hỗ trợ vận tải_Dịch vụ bốc xếp hàng hóa",
-                        "Chỉ số giá vận tải, kho bãi_Dịch vụ kho bãi và các dịch vụ liên quan đến hỗ trợ vận tải_Dịch vụ liên quan đến hoạt động hỗ trợ vận tải",
-                    ]
-                }
                 self.from_date = fin._parse_macro(self.from_macro)
                 self.to_date = fin._parse_macro(self.to_macro, end=True)
                 self.stretch_method = "last"
                 self.data_arr = self._load_data(self.transport_type)
 
             def _load_data(self, transport_type):
-                transport_type_field = self.transport_type_mapping.get(transport_type)
-                if not transport_type_field:
-                    raise ValueError(f"{transport_type} không hợp lệ.")
-
                 records = db.importing_objs("Economy", data_name="transport_index_qoq")
                 if len(records) == 0:
                     return []
-
+                sample_record = next((r for r in records if r.data_dict), None)
+                if sample_record and transport_type not in sample_record.data_dict:
+                    raise ValueError(f"{transport_type} không tồn tại")
                 result = []
                 for record in records:
                     time_code = record.time_code
                     data_dict = record.data_dict
-                    transport_type_info = data_dict.get(transport_type_field)
+                    transport_type_info = data_dict.get(transport_type)
 
                     if transport_type_info and "data" in transport_type_info:
                         result.append([time_code, transport_type_info["data"]])
@@ -3161,42 +2310,23 @@ class economy:
                 self.transport_type = transport_type
                 self.from_macro = fin.from_macro
                 self.to_macro = fin.to_macro
-                self.transport_type_mapping = {
-                    key: key
-                    for key in [
-                        "Chỉ số giá vận tải, kho bãi",
-                        "Chỉ số giá vận tải, kho bãi_Dịch vụ vận tải đường thủy",
-                        "Chỉ số giá vận tải, kho bãi_Dịch vụ bưu chính và chuyển phát",
-                        "Chỉ số giá vận tải, kho bãi_Dịch vụ vận tải đường hàng không",
-                        "Chỉ số giá vận tải, kho bãi_Dịch vụ vận tải đường sắt, đường bộ",
-                        "Chỉ số giá vận tải, kho bãi_Dịch vụ kho bãi và các dịch vụ liên quan đến hỗ trợ vận tải",
-                        "Chỉ số giá vận tải, kho bãi_Dịch vụ vận tải đường sắt, đường bộ_Vận tải đường sắt",
-                        "Chỉ số giá vận tải, kho bãi_Dịch vụ vận tải đường thủy_Dịch vụ vận tải đường thủy nội địa",
-                        "Chỉ số giá vận tải, kho bãi_Dịch vụ vận tải đường sắt, đường bộ_Vận tải đường bộ và xe buýt",
-                        "Chỉ số giá vận tải, kho bãi_Dịch vụ vận tải đường thủy_Dịch vụ vận tải đường ven biển và viễn dương",
-                        "Chỉ số giá vận tải, kho bãi_Dịch vụ kho bãi và các dịch vụ liên quan đến hỗ trợ vận tải_Dịch vụ bốc xếp hàng hóa",
-                        "Chỉ số giá vận tải, kho bãi_Dịch vụ kho bãi và các dịch vụ liên quan đến hỗ trợ vận tải_Dịch vụ liên quan đến hoạt động hỗ trợ vận tải",
-                    ]
-                }
                 self.from_date = fin._parse_macro(self.from_macro)
                 self.to_date = fin._parse_macro(self.to_macro, end=True)
                 self.stretch_method = "last"
                 self.data_arr = self._load_data(self.transport_type)
 
             def _load_data(self, transport_type):
-                transport_type_field = self.transport_type_mapping.get(transport_type)
-                if not transport_type_field:
-                    raise ValueError(f"{transport_type} không hợp lệ.")
-
                 records = db.importing_objs("Economy", data_name="transport_index_yoy")
                 if len(records) == 0:
                     return []
-
+                sample_record = next((r for r in records if r.data_dict), None)
+                if sample_record and transport_type not in sample_record.data_dict:
+                    raise ValueError(f"{transport_type} không tồn tại")
                 result = []
                 for record in records:
                     time_code = record.time_code
                     data_dict = record.data_dict
-                    transport_type_info = data_dict.get(transport_type_field)
+                    transport_type_info = data_dict.get(transport_type)
 
                     if transport_type_info and "data" in transport_type_info:
                         result.append([time_code, transport_type_info["data"]])
@@ -3236,42 +2366,25 @@ class economy:
                 self.transport_type = transport_type
                 self.from_macro = fin.from_macro
                 self.to_macro = fin.to_macro
-                self.transport_type_mapping = {
-                    key: key
-                    for key in [
-                        "Chỉ số giá vận tải, kho bãi",
-                        "Chỉ số giá vận tải, kho bãi_Dịch vụ vận tải đường thủy",
-                        "Chỉ số giá vận tải, kho bãi_Dịch vụ bưu chính và chuyển phát",
-                        "Chỉ số giá vận tải, kho bãi_Dịch vụ vận tải đường hàng không",
-                        "Chỉ số giá vận tải, kho bãi_Dịch vụ vận tải đường sắt, đường bộ",
-                        "Chỉ số giá vận tải, kho bãi_Dịch vụ kho bãi và các dịch vụ liên quan đến hỗ trợ vận tải",
-                        "Chỉ số giá vận tải, kho bãi_Dịch vụ vận tải đường sắt, đường bộ_Vận tải đường sắt",
-                        "Chỉ số giá vận tải, kho bãi_Dịch vụ vận tải đường thủy_Dịch vụ vận tải đường thủy nội địa",
-                        "Chỉ số giá vận tải, kho bãi_Dịch vụ vận tải đường sắt, đường bộ_Vận tải đường bộ và xe buýt",
-                        "Chỉ số giá vận tải, kho bãi_Dịch vụ vận tải đường thủy_Dịch vụ vận tải đường ven biển và viễn dương",
-                        "Chỉ số giá vận tải, kho bãi_Dịch vụ kho bãi và các dịch vụ liên quan đến hỗ trợ vận tải_Dịch vụ bốc xếp hàng hóa",
-                        "Chỉ số giá vận tải, kho bãi_Dịch vụ kho bãi và các dịch vụ liên quan đến hỗ trợ vận tải_Dịch vụ liên quan đến hoạt động hỗ trợ vận tải",
-                    ]
-                }
                 self.from_date = fin._parse_macro(self.from_macro)
                 self.to_date = fin._parse_macro(self.to_macro, end=True)
                 self.stretch_method = "last"
                 self.data_arr = self._load_data(self.transport_type)
 
             def _load_data(self, transport_type):
-                transport_type_field = self.transport_type_mapping.get(transport_type)
-                if not transport_type_field:
-                    raise ValueError(f"{transport_type} không hợp lệ.")
-
-                records = db.importing_objs("Economy", data_name="transport_index_acc_yoy")
+                records = db.importing_objs(
+                    "Economy", data_name="transport_index_acc_yoy"
+                )
                 if len(records) == 0:
                     return []
-
+                sample_record = next((r for r in records if r.data_dict), None)
+                if sample_record and transport_type not in sample_record.data_dict:
+                    raise ValueError(f"{transport_type} không tồn tại")
                 result = []
                 for record in records:
                     time_code = record.time_code
                     data_dict = record.data_dict
-                    transport_type_info = data_dict.get(transport_type_field)
+                    transport_type_info = data_dict.get(transport_type)
 
                     if transport_type_info and "data" in transport_type_info:
                         result.append([time_code, transport_type_info["data"]])
@@ -3311,46 +2424,23 @@ class economy:
                 self.producer_type = producer_type
                 self.from_macro = fin.from_macro
                 self.to_macro = fin.to_macro
-                self.producer_type_mapping = {
-                    key: key
-                    for key in [
-                        "Dịch vụ", 
-                        "Công nghiệp", 
-                        "Công nghiệp_Khai khoáng", 
-                        "Công nghiệp_Vận tải kho bãi", 
-                        "Nông, lâm nghiệp và thủy sản", 
-                        "Công nghiệp_Giáo dục và đào tạo", 
-                        "Công nghiệp_Thông tin và truyền thông", 
-                        "Công nghiệp_Dịch vụ lưu trú và ăn uống", 
-                        "Công nghiệp_Công nghiệp chế biến, chế tạo", 
-                        "Công nghiệp_Nghệ thuật, vui chơi và giải trí", 
-                        "Công nghiệp_Y tế và hoạt động trợ giúp xã hội", 
-                        "Nông, lâm nghiệp và thủy sản_Thủy sản khai thác, nuôi trồng", 
-                        "Nông, lâm nghiệp và thủy sản_Lâm nghiệp và dịch vụ có liên quan", 
-                        "Nông, lâm nghiệp và thủy sản_Nông nghiệp và dịch vụ có liên quan", 
-                        "Công nghiệp_Cung cấp nước, hoạt động quản lý và xử lý rác thải, nước thải", 
-                        "Công nghiệp_Sản xuất và phân phối điện, khí đốt, nước nóng, hơi nước và điều hòa không khí"
-                        ]
-                }
                 self.from_date = fin._parse_macro(self.from_macro)
                 self.to_date = fin._parse_macro(self.to_macro, end=True)
                 self.stretch_method = "last"
                 self.data_arr = self._load_data(self.producer_type)
 
             def _load_data(self, producer_type):
-                producer_type_field = self.producer_type_mapping.get(producer_type)
-                if not producer_type_field:
-                    raise ValueError(f"{producer_type} không hợp lệ.")
-
                 records = db.importing_objs("Economy", data_name="producer_index_qoq")
                 if len(records) == 0:
                     return []
-
+                sample_record = next((r for r in records if r.data_dict), None)
+                if sample_record and producer_type not in sample_record.data_dict:
+                    raise ValueError(f"{producer_type} không tồn tại")
                 result = []
                 for record in records:
                     time_code = record.time_code
                     data_dict = record.data_dict
-                    producer_type_info = data_dict.get(producer_type_field)
+                    producer_type_info = data_dict.get(producer_type)
 
                     if producer_type_info and "data" in producer_type_info:
                         result.append([time_code, producer_type_info["data"]])
@@ -3389,47 +2479,26 @@ class economy:
             def __init__(self, producer_type):
                 self.producer_type = producer_type
                 self.from_macro = fin.from_macro
-                self.to_macro = fin.to_macro
-                self.producer_type_mapping = {
-                    key: key
-                    for key in [
-                        "Dịch vụ",
-                        "Công nghiệp",
-                        "Công nghiệp_Khai khoáng",
-                        "Công nghiệp_Vận tải kho bãi",
-                        "Nông, lâm nghiệp và thủy sản",
-                        "Công nghiệp_Giáo dục và đào tạo",
-                        "Công nghiệp_Thông tin và truyền thông",
-                        "Công nghiệp_Dịch vụ lưu trú và ăn uống",
-                        "Công nghiệp_Công nghiệp chế biến, chế tạo",
-                        "Công nghiệp_Nghệ thuật, vui chơi và giải trí",
-                        "Công nghiệp_Y tế và hoạt động trợ giúp xã hội",
-                        "Nông, lâm nghiệp và thủy sản_Thủy sản khai thác, nuôi trồng",
-                        "Nông, lâm nghiệp và thủy sản_Lâm nghiệp và dịch vụ có liên quan",
-                        "Nông, lâm nghiệp và thủy sản_Nông nghiệp và dịch vụ có liên quan",
-                        "Công nghiệp_Cung cấp nước, hoạt động quản lý và xử lý rác thải, nước thải",
-                        "Công nghiệp_Sản xuất và phân phối điện, khí đốt, nước nóng, hơi nước và điều hòa không khí",
-                    ]
-                }
+                self.to_macro = fin.to_macro                
                 self.from_date = fin._parse_macro(self.from_macro)
                 self.to_date = fin._parse_macro(self.to_macro, end=True)
                 self.stretch_method = "last"
                 self.data_arr = self._load_data(self.producer_type)
 
             def _load_data(self, producer_type):
-                producer_type_field = self.producer_type_mapping.get(producer_type)
-                if not producer_type_field:
-                    raise ValueError(f"{producer_type} không hợp lệ.")
-
                 records = db.importing_objs("Economy", data_name="producer_index_yoy")
                 if len(records) == 0:
                     return []
+
+                sample_record = next((r for r in records if r.data_dict), None)
+                if sample_record and producer_type not in sample_record.data_dict:
+                    raise ValueError(f"{producer_type} không tồn tại")
 
                 result = []
                 for record in records:
                     time_code = record.time_code
                     data_dict = record.data_dict
-                    producer_type_info = data_dict.get(producer_type_field)
+                    producer_type_info = data_dict.get(producer_type)
 
                     if producer_type_info and "data" in producer_type_info:
                         result.append([time_code, producer_type_info["data"]])
@@ -3469,46 +2538,28 @@ class economy:
                 self.producer_type = producer_type
                 self.from_macro = fin.from_macro
                 self.to_macro = fin.to_macro
-                self.producer_type_mapping = {
-                    key: key
-                    for key in [
-                        "Dịch vụ",
-                        "Công nghiệp",
-                        "Công nghiệp_Khai khoáng",
-                        "Công nghiệp_Vận tải kho bãi",
-                        "Nông, lâm nghiệp và thủy sản",
-                        "Công nghiệp_Giáo dục và đào tạo",
-                        "Công nghiệp_Thông tin và truyền thông",
-                        "Công nghiệp_Dịch vụ lưu trú và ăn uống",
-                        "Công nghiệp_Công nghiệp chế biến, chế tạo",
-                        "Công nghiệp_Nghệ thuật, vui chơi và giải trí",
-                        "Công nghiệp_Y tế và hoạt động trợ giúp xã hội",
-                        "Nông, lâm nghiệp và thủy sản_Thủy sản khai thác, nuôi trồng",
-                        "Nông, lâm nghiệp và thủy sản_Lâm nghiệp và dịch vụ có liên quan",
-                        "Nông, lâm nghiệp và thủy sản_Nông nghiệp và dịch vụ có liên quan",
-                        "Công nghiệp_Cung cấp nước, hoạt động quản lý và xử lý rác thải, nước thải",
-                        "Công nghiệp_Sản xuất và phân phối điện, khí đốt, nước nóng, hơi nước và điều hòa không khí",
-                    ]
-                }
                 self.from_date = fin._parse_macro(self.from_macro)
                 self.to_date = fin._parse_macro(self.to_macro, end=True)
                 self.stretch_method = "last"
                 self.data_arr = self._load_data(self.producer_type)
 
             def _load_data(self, producer_type):
-                producer_type_field = self.producer_type_mapping.get(producer_type)
-                if not producer_type_field:
-                    raise ValueError(f"{producer_type} không hợp lệ.")
 
-                records = db.importing_objs("Economy", data_name="producer_index_acc_yoy")
+                records = db.importing_objs(
+                    "Economy", data_name="producer_index_acc_yoy"
+                )
                 if len(records) == 0:
                     return []
+
+                sample_record = next((r for r in records if r.data_dict), None)
+                if sample_record and producer_type not in sample_record.data_dict:
+                    raise ValueError(f"{producer_type} không tồn tại")
 
                 result = []
                 for record in records:
                     time_code = record.time_code
                     data_dict = record.data_dict
-                    producer_type_info = data_dict.get(producer_type_field)
+                    producer_type_info = data_dict.get(producer_type)
 
                     if producer_type_info and "data" in producer_type_info:
                         result.append([time_code, producer_type_info["data"]])
@@ -3539,7 +2590,6 @@ class economy:
                 )
 
         return producer_index_acc_yoy(producer_type)
-
 
 class foreign:
     def __init__(self, from_macro=None, to_macro=None):
@@ -3839,9 +2889,7 @@ class foreign:
 
             def _load_data(self, location):
 
-                records = db.importing_objs(
-                    "FOREIGN", data_name="export_import_total"
-                )
+                records = db.importing_objs("FOREIGN", data_name="export_import_total")
                 if len(records) == 0:
                     return []
 
@@ -4166,11 +3214,4 @@ class government:
                     method or self.stretch_method,
                 )
 
-        return budget_out(budget_type)        
-
-# print(government('M2021_08').public_investment('Bộ Y tế').get_data_arr())
-
-# print(stockprice('M2025_04').market().stock('vnindex').get_data_arr())
-
-# print(economy("M2020_04", "M2022_05").gdp_real("Tổng GDP_value").get_data_arr())
-# print(economy("M2020_04", "M2022_05").gdp_real("Tổng GDP_value").get_data_arr())
+        return budget_out(budget_type)
