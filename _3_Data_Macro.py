@@ -556,8 +556,8 @@ class finance:
                 return result
 
             def get_data_arr(self):
-                filtered = self._parse_macro(self.from_macro)
-                return self.__format__to_daily(filtered)
+                filtered = self._filter_data()
+                return self._format_to_daily(filtered)
 
             def stretch(self, method=None):
                 return stretch(self.get_data_arr(), method or self.stretch_method)

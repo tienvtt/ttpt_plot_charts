@@ -18,9 +18,11 @@ import asyncio
 import xlwings as xw
 import numpy as np
 import pandas as pd
+import statistics
 from collections import defaultdict
 from urllib.parse import quote_plus as qp
 from sqlalchemy import create_engine, text
+from matplotlib.ticker import FuncFormatter
 
 # # WEB DEPENDENCIES
 # from selenium import webdriver
@@ -37,6 +39,7 @@ import threading
 import multiprocessing as mp
 import concurrent.futures as concurrent
 from multiprocessing import Pool, Manager, Queue
+
 
 import PyPDF2
 from PyPDF2 import PdfReader, PdfWriter, PdfMerger
