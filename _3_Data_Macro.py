@@ -255,7 +255,6 @@ class stockprice:
 
         return market()
 
-
 class finance:
     def __init__(self, from_macro=None, to_macro=None):
         self.from_macro = from_macro

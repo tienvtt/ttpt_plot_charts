@@ -39,8 +39,9 @@ import threading
 import multiprocessing as mp
 import concurrent.futures as concurrent
 from multiprocessing import Pool, Manager, Queue
-
-
+from dotenv import load_dotenv
+import os
+import openai
 import PyPDF2
 from PyPDF2 import PdfReader, PdfWriter, PdfMerger
 
