@@ -1,0 +1,7 @@
+.env
+Database/
+combine_img/
+image_name/
+image_path/
+tempCodeRunnerFile.py
+__pycache__/
