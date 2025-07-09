@@ -1,30 +1,15 @@
 from _0_Dependencies import *
 from _1_Sub_Func import *
 from _2_Mysql import db
-import base64
 from extract_text_from_url import *
 
+"""9/7/2025"""
+"""create a dataframe for func_name and args"""
+"""commit code, ignore các folders image và .env"""
+"""gen-chart + original text -> new text"""
+"""bỏ parsed macro time vì đã đổi về none hết rồi"""
+
 load_dotenv()
-
-""""
-dynamic charts: 
- - dựa trên số lượng json objects -> vẽ chart, đối với những chart có input không hợp lệ -> bỏ
-
-dynamic page in repport
-generate valid chart->import into template, mỗi page là 1 valid chart
-
-"""
-"""
-list func_name và args vào một dataframe
-gpt đọc, compare with....nội dung trong text, rút ra các lệnh vẽ combinechart 
-
-"""
-
-"""
-1. just read the url -> extract into main paras (sub titles)
-2. call gpt for each title ->  funcs and args 
----> list of funcs and args 
-"""
 
 class GEN:
     def __init__(self):
@@ -84,7 +69,7 @@ class GEN:
             return url
         return None
 
-    def text(self, model_name="gpt-4o", **kwargs):
+    def text(self, model_name="gpt-4.1-nano", **kwargs):
         # self.url = kwargs['input_url']
 
         begin = datetime.now()
@@ -107,16 +92,13 @@ class GEN:
         system_prompt = (
             "Bạn là một data analyst chuyên nghiệp có khả năng đọc báo cáo phân tích thành thạo."
             "Dựa trên nội dung của các input, hãy trả về output có format là một list các json object, các json object có format:"
-            "- from_macro: mốc thời gian bắt đầu, định dạng phải phù hợp với timeframe:"
-            "    + daily: DYYYY_MM_DD (ví dụ: D2025_07_01)"
-            "    + monthly: MYYYY_MM (ví dụ: M2025_07)"
-            "    + quarterly: QYYYY_QN (ví dụ: Q2025_02)"
-            "    + yearly: YYYY (ví dụ: Y2025)"
-            "- to_macro: mốc thời gian kết thúc, nếu to_macro giống from_macro, thì from_macro được lấy từ mốc nhỏ hơn to_macro 1 năm, định dạng to_macro vẫn giống from_macro"
-            "- timeframe (daily, monthly, quarterly, yearly)"
+            "- from_macro: None"
+            "- to_macro: None"
+            "- timeframe (daily, monthly, quarterly hoặc yearly)"
             "- series: danh sách các loại dữ liệu cần vẽ, mỗi phần tử gồm:"
-            "   - func_name: tên hàm sẽ gọi trong combinechart, ví dụ: add_stock, add_interbank_vol"
-            "   - args: danh sách các tham số truyền vào, các giá trị này phải hợp lệ với func_name dựa trên metadata cung cấp và không được để trống."
+            "   - func_name: tên hàm sẽ gọi trong combinechart, ví dụ: add_stock, add_interbank_vol, add_cpi, add_gdp_real, etc"
+            "   - args: danh sách các tham số truyền vào, các giá trị này phải hợp lệ với func_name dựa trên metadata cung cấp, ví dụ: vnindex, Doanh số kỳ hạn qua đêm, Chỉ số giá tiêu dùng_mom, etc"
+            "Chỉ chọn tối đa 5 series quan trọng nhất cho mỗi biểu đồ, ưu tiên các mã nổi bật hoặc được nhắc nhiều."
             "Dữ liệu của mỗi JSON object trên được phân tích từ mỗi nội dung chính của bài báo cáo input (bài báo cáo có thể có nhiều chủ đề dựa trên khả năng brainstorm của bạn)"
         )
         user_prompt = f"""Đây là file báo cáo: "{input_text}"
@@ -154,11 +136,22 @@ class GEN:
                     return None
                 filtered = []
                 seen = set()
-                for item in parsed:
-                    # Lọc series có args rỗng
+                for item in parsed:                    
+                    from_macro = item.get("from_macro")
+                    to_macro = item.get("to_macro")
+                    if from_macro == to_macro:
+                        item["from_macro"] = None
+                        item["to_macro"] = None
+
                     item["series"] = [
                         s for s in item.get("series", []) if s.get("args")
                     ]
+
+                    for s in item["series"]:
+                        func_name = s.get("func_name","")
+                        if not func_name.startswith("add_"):
+                            s["func_name"] = "add_"+ func_name
+
                     # Nếu series rỗng thì bỏ qua object này
                     if not item["series"]:
                         continue
@@ -173,10 +166,17 @@ class GEN:
                 return filtered if filtered else None
 
             if isinstance(parsed, dict) and parsed.get("series"):
+                from_macro = parsed.get("from_macro")
+                to_macro = parsed.get("to_macro")
+                if from_macro == to_macro:
+                    parsed["from_macro"] =None
+                    parsed["to_macro"] = None
                 # Lọc series có args rỗng
                 parsed["series"] = [
                     s for s in parsed.get("series", []) if s.get("args")
                 ]
+                for s in parsed["series"]:
+                    func_name = s.get
                 if not parsed["series"]:
                     return None
                 return [parsed]
@@ -189,11 +189,6 @@ class GEN:
 
 # for key, value in GEN().get_all_macro_types().items():
 #     print(f"{key}: {str(value)[0:100]}")
-# print(
-#     GEN().text(
-#         model_name="gpt-4o-mini",
-#         input_url="https://vdsc.com.vn/data/api/app/file-storage/bef66b74-6cc1-48a7-c018-08ddb9e21993/B%E1%BA%A3n%20tin%20s%C3%A1ng_20250704.pdf?downloadFrom=ManagementReport-9904",
-#     )
-# )
-# print(GEN().get_input_url(data_name="VNDS STRATEGY - Thị trường năm mới, tầm cao mới"))
-# print(GEN().get_input_url(data_name="SSI STRATEGY - Nhìn xa trông rộng"))
+# print(GEN().text(data_name="BSC MACRO - Cập nhật diễn biến cuộc chiến thuế quan 2025"))
+
+# print(GEN().get_input_url(data_name="BSC MACRO - Cập nhật diễn biến cuộc chiến thuế quan 2025"))

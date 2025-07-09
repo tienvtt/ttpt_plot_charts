@@ -127,7 +127,7 @@ class combinechart:
         self.data_list.append(
             {
                 "df": df,
-                "label": label or f"Giá trị {stock_code}",
+                "label": label or f" {stock_code.upper()}",
                 "color": color,
             }
         )
@@ -141,7 +141,7 @@ class combinechart:
             term,
             label,
             color,
-            "interbank_rate ",
+            
         )
     
     def add_reverse_repo(self, repo_type, label=None, color=None):
@@ -150,7 +150,7 @@ class combinechart:
             repo_type,
             label,
             color,
-            "reverse_repo ",
+            
         )
     
     def add_interbank_vol(self, term, label=None, color=None):
@@ -159,7 +159,7 @@ class combinechart:
             term,
             label,
             color,
-            "interbank_vol ",
+            
         )
 
     def add_sell_outright(self, outright_type, label=None, color=None):
@@ -168,7 +168,7 @@ class combinechart:
             outright_type,
             label,
             color,
-            "sell_outright ",
+            
         )
     
     def add_borrowing(self, industry, label=None, color=None):
@@ -177,7 +177,7 @@ class combinechart:
             industry,
             label,
             color,
-            "borrowing ",
+        
         )
     
     def add_lending(self, lending_type, label=None, color=None):
@@ -186,7 +186,7 @@ class combinechart:
             lending_type,
             label,
             color,
-            "lending ",
+            
         )
     
     def add_M2(self, M2_type, label=None, color=None):
@@ -195,7 +195,7 @@ class combinechart:
             M2_type,
             label,
             color,
-            "M2 ",
+            
         )
     
     def add_moneysupply(self, moneysupply_type, label=None, color=None):
@@ -204,7 +204,7 @@ class combinechart:
             moneysupply_type,
             label,
             color,
-            "moneysupply ",
+            
         )
     
     def add_loans(self, loans_type, label=None, color=None):
@@ -213,7 +213,7 @@ class combinechart:
             loans_type,
             label,
             color,
-            "loans ",
+            
         )
     
     def add_securities_account(self, account_type, label=None, color=None):
@@ -222,7 +222,7 @@ class combinechart:
             account_type,
             label,
             color,
-            "securities_account ",
+
         )
     
     """-------------------ECONOMY---------------------"""
@@ -232,7 +232,7 @@ class combinechart:
             pmi_type,
             label,
             color,
-            "pmi ",
+
         )
     
     def add_passenger_transport(self, transport_type, label=None, color=None):
@@ -241,7 +241,7 @@ class combinechart:
             transport_type,
             label,
             color,
-            "passenger_transport ",
+
         )
     
     def add_retail_revenue_acc_raw(self, revenue_type, label=None, color=None):
@@ -250,7 +250,7 @@ class combinechart:
             revenue_type,
             label,
             color,
-            "retail_revenue_acc_raw ",
+
         )
     
     def add_retail_revenue_acc_yoy(self, revenue_type, label=None, color=None):
@@ -259,7 +259,7 @@ class combinechart:
             revenue_type,
             label,
             color,
-            "retail_revenue_acc_yoy ",
+
         )
     
     def add_retail_revenue_raw(self, gdp, label=None, color=None):
@@ -268,7 +268,6 @@ class combinechart:
             gdp,
             label,
             color,
-            "retail_revenue_raw ",
         )
     
     def add_retail_revenue_yoy(self, gdp, label=None, color=None):
@@ -277,7 +276,6 @@ class combinechart:
             gdp,
             label,
             color,
-            "retail_revenue_yoy ",
         )
     
     def add_cpi(self, gdp, label=None, color=None):
@@ -286,7 +284,6 @@ class combinechart:
             gdp,
             label,
             color,
-            "cpi ",
         )
     
     def add_cpi_mom(self, gdp, label=None, color=None):
@@ -295,7 +292,6 @@ class combinechart:
             gdp,
             label,
             color,
-            "cpi_mom ",
         )
     
     def add_cpi_yoy(self, gdp, label=None, color=None):
@@ -304,7 +300,6 @@ class combinechart:
             gdp,
             label,
             color,
-            "cpi_yoy ",
         )
 
     def add_gdp_real(self, gdp, label=None, color=None):
@@ -313,7 +308,6 @@ class combinechart:
             gdp,
             label,
             color,
-            "gdp_real ",
         )
     
     def add_gdp_real_raw(self, gdp, label=None, color=None):
@@ -322,7 +316,6 @@ class combinechart:
             gdp,
             label,
             color,
-            "gdp_real_raw ",
         )
 
     def add_gdp_real_yoy(self, gdp, label=None, color=None):
@@ -331,7 +324,6 @@ class combinechart:
             gdp,
             label,
             color,
-            "gdp_real_yoy ",
         )
     
     def add_gdp_real_acc_yoy(self, gdp, label=None, color=None):
@@ -340,7 +332,6 @@ class combinechart:
             gdp,
             label,
             color,
-            "gdp_real_acc_yoy ",
         )
 
     def add_gdp_real_acc_raw(self, gdp, label=None, color=None):
@@ -349,7 +340,6 @@ class combinechart:
             gdp,
             label,
             color,
-            "gdp_real_acc_raw ",
         )
     
     def add_gdp_nominal(self, gdp, label=None, color=None):
@@ -358,7 +348,6 @@ class combinechart:
             gdp,
             label,
             color,
-            "gdp_nominal ",
         )
     
     def add_gdp_nominal_raw(self, gdp, label=None, color=None):
@@ -367,7 +356,6 @@ class combinechart:
             gdp,
             label,
             color,
-            "gdp_nominal_raw ",
         )
     
     def add_gdp_nominal_acc_yoy(self, gdp, label=None, color=None):
@@ -376,7 +364,6 @@ class combinechart:
             gdp,
             label,
             color,
-            "gdp_nominal_acc_yoy ",
         )
     
     def add_gdp_nominal_acc_raw(self, gdp, label=None, color=None):
@@ -385,7 +372,6 @@ class combinechart:
             gdp,
             label,
             color,
-            "gdp_nominal_acc_raw ",
         )
 
     def add_iip_mom(self, iip_type, label=None, color=None):
@@ -394,7 +380,6 @@ class combinechart:
             iip_type,
             label,
             color,
-            "iip_mom ",
         )
 
     def add_iip_qoq(self, iip_type, label=None, color=None):
@@ -403,7 +388,6 @@ class combinechart:
             iip_type,
             label,
             color,
-            "iip_qoq",
         )
 
     def add_iip_yoy(self, iip_type, label=None, color=None):
@@ -412,7 +396,6 @@ class combinechart:
             iip_type,
             label,
             color,
-            "iip_yoy",
         )
 
     def add_iip_acc_yoy(self, iip_type, label=None, color=None):
@@ -421,7 +404,6 @@ class combinechart:
             iip_type,
             label,
             color,
-            "iip_acc_yoy",
         )
 
     def add_transport_index_qoq(self, transport_type, label=None, color=None):
@@ -430,7 +412,6 @@ class combinechart:
             transport_type,
             label,
             color,
-            "transport_index_qoq",
         )
 
     def add_transport_index_yoy(self, transport_type, label=None, color=None):
@@ -439,7 +420,6 @@ class combinechart:
             transport_type,
             label,
             color,
-            "transport_index_yoy",
         )
 
     def add_transport_index_acc_yoy(self, transport_type, label=None, color=None):
@@ -448,7 +428,6 @@ class combinechart:
             transport_type,
             label,
             color,
-            "transport_index_acc_yoy",
         )
 
     def add_producer_index_qoq(self, producer_type, label=None, color=None):
@@ -457,7 +436,6 @@ class combinechart:
             producer_type,
             label,
             color,
-            "producer_index_qoq",
         )
 
     def add_producer_index_yoy(self, producer_type, label=None, color=None):
@@ -466,7 +444,6 @@ class combinechart:
             producer_type,
             label,
             color,
-            "producer_index_yoy",
         )
 
     def add_producer_index_acc_yoy(self, producer_type, label=None, color=None):
@@ -475,7 +452,6 @@ class combinechart:
             producer_type,
             label,
             color,
-            "producer_index_acc_yoy",
         )
 
     """-------------------GOVERNMENT---------------------"""
@@ -486,7 +462,6 @@ class combinechart:
             ministry,
             label,
             color,
-            "public_investment ",
         )
 
     def add_social_investment(self, ministry, label=None, color=None):
@@ -495,7 +470,6 @@ class combinechart:
             ministry,
             label,
             color,
-            "social_investment ",
         )
 
     def add_budget_in(self, budget_type, label=None, color=None):
@@ -504,7 +478,6 @@ class combinechart:
             budget_type,
             label,
             color,
-            "budget_in",
         )
 
     def add_budget_out(self, budget_type, label=None, color=None):
@@ -513,7 +486,6 @@ class combinechart:
             budget_type,
             label,
             color,
-            "budget_out",
         )
 
     """-------------------FOREIGN---------------------"""
@@ -523,7 +495,6 @@ class combinechart:
             product,
             label,
             color,
-            "import_byproduct",
         )
 
     def add_import_bylocation(self, location, label=None, color=None):
@@ -532,7 +503,6 @@ class combinechart:
             location,
             label,
             color,
-            "import_bylocation",
         )
 
     def add_export_byproduct(self, product, label=None, color=None):
@@ -541,7 +511,6 @@ class combinechart:
             product,
             label,
             color,
-            "export_byproduct",
         )
 
     def add_export_bylocation(self, location, label=None, color=None):
@@ -550,7 +519,6 @@ class combinechart:
             location,
             label,
             color,
-            "export_bylocation",
         )
 
     def add_export_import_total(self, total_type, label=None, color=None):
@@ -559,7 +527,6 @@ class combinechart:
             total_type,
             label,
             color,
-            "export_import_total",
         )
 
     def _setup_xaxis(self, ax):
@@ -584,18 +551,18 @@ class combinechart:
             ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
 
         plt.setp(ax.get_xticklabels(), rotation=45, ha="right")
-
+        ax.xaxis.set_major_locator(ticker.MaxNLocator(nbins=10))
     def plot(self, save_path="None"):
         if not self.data_list:
             raise ValueError("Chưa có dữ liệu để vẽ.")
 
-        fig, host = plt.subplots(figsize=(12, 5))
+        fig, host = plt.subplots(figsize=(12, 6))
         fig.subplots_adjust(right=0.75)
         host.set_title(self.title)
 
         host.spines["left"].set_visible(False)
         host.yaxis.set_visible(False)
-        # định dạng giá trị trục y
+        # định dạng giá trị 
         def auto_format(value, pos):
             if value == 0:
                 return "0"
@@ -606,7 +573,7 @@ class combinechart:
                 return f"{value/1e6:.1f}M"  
             elif abs_value >= 1e3:
                 return f"{value/1e3:.1f}K"  
-            return f"{value:.1f}"
+            return f"{value:.3f}"
         
         axes = []
         for i, data in enumerate(self.data_list):
@@ -615,6 +582,10 @@ class combinechart:
                 ax.spines["right"].set_position(("axes", 1 + 0.1 * i))
 
             color = self._resolve_color(data["color"])
+            #Shorten legend
+            label = data["label"]
+            if isinstance(label, str) and len(label) > 30:
+                label = label[:30] + "..."
             ax.plot(
                 data["df"]["Date"],
                 data["df"]["Value"],
@@ -622,7 +593,7 @@ class combinechart:
                 label=data["label"],
                 linewidth=1,
             )
-            # Áp dụng định dạng giá trị cho trục y
+            
             ax.yaxis.set_major_formatter(plt.FuncFormatter(auto_format))
             ax.tick_params(axis="y", labelcolor=color)
             # ax.set_ylabel(data["label"], color=color)
@@ -637,13 +608,14 @@ class combinechart:
                 lns, lbls = ax.get_legend_handles_labels()
                 lines.extend(lns)
                 labels.extend(lbls)
-            host.legend(lines, labels, loc="upper left")
+
+            host.legend(lines, labels, loc='upper left', framealpha = 0.5)
 
         fig.tight_layout()
 
         saved_path = None
         if save_path is not None:
-            # Nếu save_path là thư mục
+            
             if os.path.isdir(save_path) or not os.path.splitext(save_path)[1]:
                 if not os.path.exists(save_path):
                     os.makedirs(save_path)
@@ -659,7 +631,7 @@ class combinechart:
         plt.close(fig)
 
         return saved_path
-
+   
     def plot_bar(self, save_path="None"):
         if not self.data_list:
             raise ValueError("Chưa có dữ liệu để vẽ.")
@@ -726,6 +698,10 @@ class combinechart:
                 ax.spines["right"].set_position(("axes", 1 + 0.1 * len(plotted_axes)))
 
             color = self._resolve_color(data_item["color"])
+            # shorten legends
+            label = data_item['label']
+            if isinstance(label, str) and len(label) > 30:
+                label = label[:30]+ "..."
             x_numeric = mdates.date2num(
                 df["Date"]
             )  
@@ -772,13 +748,13 @@ class combinechart:
                 lines.extend(lns)
                 labels.extend(lbls)
             if lines and labels:  # Check if legend items were successfully gathered
-                host.legend(lines, labels, loc="upper left")
+                host.legend(lines, labels, loc='upper left', framealpha = 0.5)
 
         fig.tight_layout()
 
         saved_path = None
         if save_path is not None:
-            # Nếu save_path là thư mục
+            
             if os.path.isdir(save_path) or not os.path.splitext(save_path)[1]:
                 if not os.path.exists(save_path):
                     os.makedirs(save_path)
@@ -794,3 +770,5 @@ class combinechart:
         plt.close(fig)
 
         return saved_path
+
+# combinechart(timeframe="daily").add_interbank_vol("Doanh số kỳ hạn qua đêm").plot()

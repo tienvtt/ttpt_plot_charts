@@ -3,33 +3,11 @@ from _1_Sub_Func import *
 from _1_Sub_Xlwings import *
 from _2_Mysql import *
 from combine_chart import *
-import openai
-import json
 from _x_GEN import *
 
-load_dotenv()
+# load_dotenv()
 
 
-""" Đọc input text -> gpt extract dữ liệu, compare with data_macro -> combinechart input in JSON format 
-    Call combine chart với input là tham số từ json format 
-    create chatr -> image path    
-"""
-"""Get image from image path ->  gpt phân tích"""
-"""Product input: 
-text -> chart, save chart -> gen()text (chart) -> new chart
-
-text + chart -> new chart?
-"""
-
-"""
-1. url trong report analysis khong access duoc
-2. chart qua nhieu lines
-3. sheet co dinh
-"""
-
-"""
-loop qua json  list -> charts, input khong hop le -> bo qua -> ve cho den het
-"""
 class product_test:
     def __init__(self, **kwargs):
         import inspect
@@ -96,9 +74,11 @@ class product_test:
                         print(f"Hàm {func_name} không tồn tại trong combinechart")
                 except Exception as e:
                     print(f"Lỗi khi gọi {func_name} với args {args}: {e}")
-
-            chart.plot(save_path=image_path)
-            image_paths.append(image_path)
+            try:
+                chart.plot(save_path=image_path)
+                image_paths.append(image_path)
+            except Exception as e:
+                print(f"Lỗi khi vẽ chart{idx+1}: {e}")
 
         return image_paths
     # def chart_1(self,  width=None, height=None):
@@ -170,6 +150,6 @@ class product_test:
 
 print(
     product_test(
-        input_url="https://vdsc.com.vn/data/api/app/file-storage/ac737b3f-0a1c-4d9e-81b7-08ddaf087e48/B%E1%BA%A3n%20tin%20s%C3%A1ng_20250620.pdf?downloadFrom=ManagementReport-9885"
+        data_name="PHS STRATEGY - Dự báo thay đổi bộ chỉ số VN Diamond, VN30 kỳ Quý 2/2025: VN Diamond thêm mới CTD, L"
     ).charts()
 )

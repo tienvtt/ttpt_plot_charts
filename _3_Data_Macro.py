@@ -66,7 +66,7 @@ def stretch(data_arr, method="last"):
     level_index = level_order.index(from_level)
 
     # Parse raw data
-    parsed = [[parse_date(code), float(value)] for code, value in data_arr]
+    parsed = [[parse_date(code), float(value)] for code, value in data_arr if value is not None]
 
     result = {
         "daily": [],
