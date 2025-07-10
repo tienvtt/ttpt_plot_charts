@@ -3,18 +3,94 @@ from _1_Sub_Func import *
 from _2_Mysql import db
 from extract_text_from_url import *
 
-"""9/7/2025"""
-"""create a dataframe for func_name and args"""
-"""commit code, ignore các folders image và .env"""
-"""gen-chart + original text -> new text"""
-"""bỏ parsed macro time vì đã đổi về none hết rồi"""
-
 load_dotenv()
+
 
 class GEN:
     def __init__(self):
         self.prompt = ""
         pass
+
+    def get_func_and_args(self):
+        macro = ["STOCKPRICE", "FOREIGN", "FINANCE", "ECONOMY", "GOVERNMENT"]
+        rows = []
+
+        exclude = {
+            "FINANCE": ["M2"],
+            "ECONOMY": ["pmi"],
+            "FOREIGN": [],
+            "GOVERNMENT": [],
+        }
+
+        for macro_name in macro:
+            records = db.importing_objs(macro_name)
+            if records is None or len(records) == 0:
+                continue
+            
+            if macro_name == "STOCKPRICE":
+                data_names = set(
+                    getattr(r, "data_name", None)
+                    for r in records
+                    if hasattr(r, "data_name")
+                )
+                for data_name in data_names:
+                    if data_name:
+                        rows.append({"func_name": "add_stock", "args": data_name})
+                continue
+
+            data_names = set(
+                getattr(r, "data_name", None)
+                for r in records
+                if hasattr(r, "data_name")
+            )
+            for data_name in data_names:
+                if not data_name:
+                    continue
+                if macro_name in exclude and data_name in exclude[macro_name]:
+                    continue
+                records_by_name = db.importing_objs(macro_name, data_name=data_name)
+                if records_by_name is None or len(records_by_name) == 0:
+                    continue
+
+                sample = next(
+                    (
+                        r
+                        for r in records_by_name
+                        if hasattr(r, "data_dict") and r.data_dict
+                    ),
+                    None,
+                )
+                if not sample:
+                    continue
+                keys = list(sample.data_dict.keys())
+
+                # Filter special cases in some specific tables
+                if macro_name == "FOREIGN" and data_name in [
+                    "export_bylocation",
+                    "import_bylocation",
+                ]:
+                    # Get all keys except 4th, 5th & 7th keys (index 3,4,6)
+                    keys_to_add = [k for i, k in enumerate(keys) if i not in [3, 4, 6]]
+                elif macro_name == "GOVERNMENT" and data_name in [
+                    "public_investment",
+                    "social_investment",
+                ]:
+                    # Get all keys except for 2nd, 3rd, 4th (index 1,2,3)
+                    keys_to_add = [k for i, k in enumerate(keys) if i not in [1, 2, 3]]
+                elif macro_name == "GOVERNMENT" and data_name == "budget_in":
+                    # Get all keys from 3rd but except for 4th
+                    keys_to_add = [k for i, k in enumerate(keys) if i >= 2 and i != 3]
+                else:
+                    # Mặc định lấy từ key thứ 4 trở đi
+                    keys_to_add = keys[3:]
+
+                for key in keys_to_add:
+                    rows.append({"func_name": f"add_{data_name.lower()}", "args": key})
+
+        rows.append({"func_name": "add_M2", "args": "M2"})
+        rows.append({"func_name": "add_pmi", "args": "pmi"})
+        df = pd.DataFrame(rows)
+        return df
 
     def get_all_macro_types(self):
         macro_types = ["stockprice", "foreign", "finance", "economy", "government"]
@@ -70,7 +146,6 @@ class GEN:
         return None
 
     def text(self, model_name="gpt-4.1-nano", **kwargs):
-        # self.url = kwargs['input_url']
 
         begin = datetime.now()
         self.gen_text = ""
@@ -85,28 +160,30 @@ class GEN:
 
         macro_metadata = kwargs.get("macro_metadata", None)
         if not macro_metadata:
-            macro_metadata = self.get_all_macro_types()
+            macro_metadata = self.get_func_and_args().to_dict(orient="records")
 
         input_text = extract_text_from_pdf_url(input_url)
-
         system_prompt = (
-            "Bạn là một data analyst chuyên nghiệp có khả năng đọc báo cáo phân tích thành thạo."
-            "Dựa trên nội dung của các input, hãy trả về output có format là một list các json object, các json object có format:"
-            "- from_macro: None"
-            "- to_macro: None"
-            "- timeframe (daily, monthly, quarterly hoặc yearly)"
-            "- series: danh sách các loại dữ liệu cần vẽ, mỗi phần tử gồm:"
-            "   - func_name: tên hàm sẽ gọi trong combinechart, ví dụ: add_stock, add_interbank_vol, add_cpi, add_gdp_real, etc"
-            "   - args: danh sách các tham số truyền vào, các giá trị này phải hợp lệ với func_name dựa trên metadata cung cấp, ví dụ: vnindex, Doanh số kỳ hạn qua đêm, Chỉ số giá tiêu dùng_mom, etc"
-            "Chỉ chọn tối đa 5 series quan trọng nhất cho mỗi biểu đồ, ưu tiên các mã nổi bật hoặc được nhắc nhiều."
-            "Dữ liệu của mỗi JSON object trên được phân tích từ mỗi nội dung chính của bài báo cáo input (bài báo cáo có thể có nhiều chủ đề dựa trên khả năng brainstorm của bạn)"
+            "Bạn là một data analyst chuyên nghiệp có khả năng đọc báo cáo phân tích thành thạo. "
+            "Dựa trên nội dung input, hãy trả về output là một list các JSON object, mỗi object gồm:\n"
+            "- from_macro: None\n"
+            "- to_macro: None\n"
+            "- timeframe: daily, monthly, quarterly hoặc yearly\n"
+            "- series: là một list, mỗi phần tử là một dict gồm:\n"
+            "   - func_name: tên hàm sẽ gọi trong combinechart (ví dụ: add_stock, add_cpi, ...)\n"
+            "   - args: tham số truyền vào, phải hợp lệ với func_name dựa trên metadata\n"
+            "Chỉ sinh ra các series mà func_name và args đúng như metadata. "
+            "Nếu không có args hợp lệ với func_name, không sinh ra object đó. "
+            "Mỗi dict trong series chỉ chứa 1 func_name và 1 args. "
+            "Chỉ chọn tối đa 5 series quan trọng nhất cho mỗi object."
         )
         user_prompt = f"""Đây là file báo cáo: "{input_text}"
-        Dưới đây là metadata (danh sách các dữ liệu có sẵn):
+        Dưới đây là metadata (danh sách các cặp func_name và args hợp lệ):
         {json.dumps(macro_metadata, ensure_ascii=False, indent=2)}
-        Hãy đảm bảo rằng args của func_name (tương ứng) có trong metadata 
-        Nếu không tìm thấy bất kỳ args nào hợp lệ với func_name dựa trên metadata, không sinh ra object đó trong list kết quả
-        Hãy trích xuất thông tin biểu đồ phù hợp dưới dạng JSON đúng cấu trúc như đã mô tả. Các dữ liệu trong series,  phải có trong metadata.
+        Chỉ được phép sinh ra các series mà func_name và args đúng như trong bảng trên.
+        Mỗi phần tử trong series là một dict gồm 1 func_name và 1 args.
+        Nếu không tìm thấy bất kỳ args nào hợp lệ với func_name dựa trên metadata, không sinh ra object đó trong list kết quả.
+        Hãy trích xuất thông tin biểu đồ phù hợp dưới dạng JSON đúng cấu trúc như đã mô tả. Các dữ liệu trong series phải có trong metadata.
         """
         client = openai.OpenAI(api_key=os.getenv("openai.api_key"))
         try:
@@ -136,26 +213,21 @@ class GEN:
                     return None
                 filtered = []
                 seen = set()
-                for item in parsed:                    
-                    from_macro = item.get("from_macro")
-                    to_macro = item.get("to_macro")
-                    if from_macro == to_macro:
-                        item["from_macro"] = None
-                        item["to_macro"] = None
+                for item in parsed:
 
                     item["series"] = [
                         s for s in item.get("series", []) if s.get("args")
                     ]
 
                     for s in item["series"]:
-                        func_name = s.get("func_name","")
+                        func_name = s.get("func_name", "")
                         if not func_name.startswith("add_"):
-                            s["func_name"] = "add_"+ func_name
+                            s["func_name"] = "add_" + func_name
 
-                    # Nếu series rỗng thì bỏ qua object này
+                    # If empty series -> ignore current object  
                     if not item["series"]:
                         continue
-                    # Loại trùng lặp func_name + args trên toàn bộ list
+                    # Remove duplicate func_name + args on list
                     for s in item["series"]:
                         key = (s["func_name"], tuple(s["args"]))
                         if key in seen:
@@ -166,12 +238,6 @@ class GEN:
                 return filtered if filtered else None
 
             if isinstance(parsed, dict) and parsed.get("series"):
-                from_macro = parsed.get("from_macro")
-                to_macro = parsed.get("to_macro")
-                if from_macro == to_macro:
-                    parsed["from_macro"] =None
-                    parsed["to_macro"] = None
-                # Lọc series có args rỗng
                 parsed["series"] = [
                     s for s in parsed.get("series", []) if s.get("args")
                 ]
@@ -191,4 +257,8 @@ class GEN:
 #     print(f"{key}: {str(value)[0:100]}")
 # print(GEN().text(data_name="BSC MACRO - Cập nhật diễn biến cuộc chiến thuế quan 2025"))
 
-# print(GEN().get_input_url(data_name="BSC MACRO - Cập nhật diễn biến cuộc chiến thuế quan 2025"))
+# # print(GEN().get_input_url(data_name="BSC MACRO - Cập nhật diễn biến cuộc chiến thuế quan 2025"))
+
+# df = GEN().get_func_and_args()
+# target_funcs = ["add_export_bylocation"]
+# print(df[df["func_name"].isin(target_funcs)])
