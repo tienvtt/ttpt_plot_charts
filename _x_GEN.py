@@ -69,17 +69,29 @@ class GEN:
                     "export_bylocation",
                     "import_bylocation",
                 ]:
-                    # Get all keys except 4th, 5th & 7th keys (index 3,4,6)
+                    # Get all keys except 4th, 5th & 7th keys 
                     keys_to_add = [k for i, k in enumerate(keys) if i not in [3, 4, 6]]
                 elif macro_name == "GOVERNMENT" and data_name in [
                     "public_investment",
                     "social_investment",
                 ]:
-                    # Get all keys except for 2nd, 3rd, 4th (index 1,2,3)
+                    # Get all keys except for 2nd, 3rd, 4th 
                     keys_to_add = [k for i, k in enumerate(keys) if i not in [1, 2, 3]]
                 elif macro_name == "GOVERNMENT" and data_name == "budget_in":
                     # Get all keys from 3rd but except for 4th
                     keys_to_add = [k for i, k in enumerate(keys) if i >= 2 and i != 3]
+                elif macro_name == "ECONOMY" and data_name in [
+                    "gdp_real_raw",
+                    "gdp_real_yoy",
+                    "gdp_nominal_raw",
+                    "gdp_nominal_acc_yoy",
+                    "gdp_nominal_yoy",
+                    "gdp_nominal_acc_raw",
+                    "gdp_real_acc_yoy",
+                    "gdp_real_acc_raw"
+                ]:
+                    keys_to_add = [k for i, k in enumerate(keys) if i >2 and i != 3]
+
                 else:
                     # Mặc định lấy từ key thứ 4 trở đi
                     keys_to_add = keys[3:]
@@ -168,7 +180,7 @@ class GEN:
             "Dựa trên nội dung input, hãy trả về output là một list các JSON object, mỗi object gồm:\n"
             "- from_macro: None\n"
             "- to_macro: None\n"
-            "- timeframe: daily, monthly, quarterly hoặc yearly\n"
+            "- timeframe: daily, monthly, quarterly hoặc yearly (chọn timeframe phù hợp dựa trên các chi tiết phân tích trong bài bài cáo cáo, đối với stock thì nên lấy daily)\n"
             "- series: là một list, mỗi phần tử là một dict gồm:\n"
             "   - func_name: tên hàm sẽ gọi trong combinechart (ví dụ: add_stock, add_cpi, ...)\n"
             "   - args: tham số truyền vào, phải hợp lệ với func_name dựa trên metadata\n"
