@@ -26,7 +26,7 @@ class GEN:
             records = db.importing_objs(macro_name)
             if records is None or len(records) == 0:
                 continue
-            
+
             if macro_name == "STOCKPRICE":
                 data_names = set(
                     getattr(r, "data_name", None)
@@ -69,13 +69,13 @@ class GEN:
                     "export_bylocation",
                     "import_bylocation",
                 ]:
-                    # Get all keys except 4th, 5th & 7th keys 
+                    # Get all keys except 4th, 5th & 7th keys
                     keys_to_add = [k for i, k in enumerate(keys) if i not in [3, 4, 6]]
                 elif macro_name == "GOVERNMENT" and data_name in [
                     "public_investment",
                     "social_investment",
                 ]:
-                    # Get all keys except for 2nd, 3rd, 4th 
+                    # Get all keys except for 2nd, 3rd, 4th
                     keys_to_add = [k for i, k in enumerate(keys) if i not in [1, 2, 3]]
                 elif macro_name == "GOVERNMENT" and data_name == "budget_in":
                     # Get all keys from 3rd but except for 4th
@@ -88,9 +88,9 @@ class GEN:
                     "gdp_nominal_yoy",
                     "gdp_nominal_acc_raw",
                     "gdp_real_acc_yoy",
-                    "gdp_real_acc_raw"
+                    "gdp_real_acc_raw",
                 ]:
-                    keys_to_add = [k for i, k in enumerate(keys) if i >2 and i != 3]
+                    keys_to_add = [k for i, k in enumerate(keys) if i > 2 and i != 3]
 
                 else:
                     # Mặc định lấy từ key thứ 4 trở đi
@@ -236,7 +236,7 @@ class GEN:
                         if not func_name.startswith("add_"):
                             s["func_name"] = "add_" + func_name
 
-                    # If empty series -> ignore current object  
+                    # If empty series -> ignore current object
                     if not item["series"]:
                         continue
                     # Remove duplicate func_name + args on list
@@ -263,6 +263,8 @@ class GEN:
         except Exception as e:
             print("Input được trả về không đúng format:\n", self.gen_text)
             return None
+
+
 
 
 # for key, value in GEN().get_all_macro_types().items():
