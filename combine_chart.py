@@ -1,4 +1,6 @@
 from _3_Data_Macro import *
+from scipy.interpolate import interp1d, make_interp_spline
+import numpy as np
 
 color_dict_vdsc = {
     "black": (40, 40, 40),
@@ -15,6 +17,7 @@ color_dict_vdsc = {
 def rgb_to_mpl(rgb):
     return tuple(c / 255 for c in rgb)
 
+
 class combinechart:
     def __init__(self, from_macro=None, to_macro=None, timeframe="daily", title=""):
         self.from_macro = from_macro
@@ -23,6 +26,84 @@ class combinechart:
         self.title = title
         self.data_list = []
         self.color_index = 0
+        self.smooth_data = False  # Flag để bật/tắt làm mượt
+        self.smooth_factor = 300  # Số điểm interpolation
+        self.smooth_method = "cubic"  # Phương thức interpolation
+
+    def enable_smooth(self, smooth_factor=300, method="cubic"):
+        """
+        Bật chế độ làm mượt dữ liệu
+
+        Parameters:
+        - smooth_factor: Số điểm để interpolation (càng nhiều càng mượt)
+        - method: Phương thức interpolation ('linear', 'cubic', 'spline')
+        """
+        self.smooth_data = True
+        self.smooth_factor = smooth_factor
+        self.smooth_method = method
+        return self
+
+    def disable_smooth(self):
+        """Tắt chế độ làm mượt dữ liệu"""
+        self.smooth_data = False
+        return self
+
+    def _smooth_data_series(self, dates, values):
+        """
+        Làm mượt một series dữ liệu
+
+        Parameters:
+        - dates: pandas Series chứa dates
+        - values: pandas Series chứa values
+
+        Returns:
+        - smooth_dates, smooth_values: dữ liệu đã được làm mượt
+        """
+        if len(dates) < 3:
+            return dates, values
+
+        # Convert dates to numeric để interpolation
+        numeric_dates = mdates.date2num(dates)
+
+        try:
+            if self.smooth_method == "linear":
+                # Linear interpolation
+                f = interp1d(numeric_dates, values, kind="linear")
+
+            elif self.smooth_method == "cubic":
+                # Cubic interpolation (yêu cầu ít nhất 4 điểm)
+                if len(dates) >= 4:
+                    f = interp1d(numeric_dates, values, kind="cubic")
+                else:
+                    f = interp1d(numeric_dates, values, kind="linear")
+
+            elif self.smooth_method == "spline":
+                # B-spline interpolation (mượt nhất)
+                if len(dates) >= 4:
+                    f = make_interp_spline(numeric_dates, values, k=3)
+                else:
+                    f = interp1d(numeric_dates, values, kind="linear")
+            else:
+                # Default to linear
+                f = interp1d(numeric_dates, values, kind="linear")
+
+            # Tạo các điểm mới cho interpolation
+            new_numeric_dates = np.linspace(
+                numeric_dates.min(), numeric_dates.max(), self.smooth_factor
+            )
+
+            # Interpolate values
+            new_values = f(new_numeric_dates)
+
+            # Convert back to dates
+            new_dates = mdates.num2date(new_numeric_dates)
+            new_dates = pd.to_datetime(new_dates)
+
+            return new_dates, new_values
+
+        except Exception as e:
+            print(f"Lỗi khi làm mượt dữ liệu: {e}")
+            return dates, values
 
     def _get_color(self):
         colors = list(color_dict_vdsc.keys())
@@ -109,9 +190,13 @@ class combinechart:
             return rgb_to_mpl(color_dict_vdsc[color_key])
         return self._get_color()
 
-    def _add_series(self, data_func, key, label=None, color=None, default_label_prefix=""):
+    def _add_series(
+        self, data_func, key, label=None, color=None, default_label_prefix=""
+    ):
         data = data_func(key).stretch()
         df = self._convert_to_df(data)
+        if self.smooth_data:
+            df["Date"], df["Value"] = self._smooth_data_series(df["Date"], df["Value"])
         self.data_list.append(
             {
                 "df": df,
@@ -124,6 +209,8 @@ class combinechart:
     def add_stock(self, stock_code, label=None, color=None):
         data = stockprice(self.from_macro).market().stock(stock_code).stretch()
         df = self._convert_to_df(data)
+        if self.smooth_data:
+            df["Date"], df["Value"] = self._smooth_data_series(df["Date"], df["Value"])
         self.data_list.append(
             {
                 "df": df,
@@ -141,25 +228,22 @@ class combinechart:
             term,
             label,
             color,
-            
         )
-    
+
     def add_reverse_repo(self, repo_type, label=None, color=None):
         return self._add_series(
             lambda r: finance(self.from_macro).reverse_repo(r),
             repo_type,
             label,
             color,
-            
         )
-    
+
     def add_interbank_vol(self, term, label=None, color=None):
         return self._add_series(
             lambda r: finance(self.from_macro).interbank_vol(r),
             term,
             label,
             color,
-            
         )
 
     def add_sell_outright(self, outright_type, label=None, color=None):
@@ -168,100 +252,90 @@ class combinechart:
             outright_type,
             label,
             color,
-            
         )
-    
+
     def add_borrowing(self, industry, label=None, color=None):
         return self._add_series(
             lambda r: finance(self.from_macro).borrowing(r),
             industry,
             label,
             color,
-        
         )
-    
+
     def add_lending(self, lending_type, label=None, color=None):
         return self._add_series(
             lambda r: finance(self.from_macro).lending(r),
             lending_type,
             label,
             color,
-            
         )
-    
+
     def add_M2(self, M2_type, label=None, color=None):
         return self._add_series(
             lambda r: finance(self.from_macro).M2(r),
             M2_type,
             label,
             color,
-            
         )
-    
+
     def add_moneysupply(self, moneysupply_type, label=None, color=None):
         return self._add_series(
             lambda r: finance(self.from_macro).moneysupply(r),
             moneysupply_type,
             label,
             color,
-            
         )
-    
+
     def add_loans(self, loans_type, label=None, color=None):
         return self._add_series(
             lambda r: finance(self.from_macro).loans(r),
             loans_type,
             label,
             color,
-            
         )
-    
+
     def add_securities_account(self, account_type, label=None, color=None):
         return self._add_series(
             lambda r: government(self.from_macro).securities_account(r),
             account_type,
             label,
             color,
-
         )
-    
+
     """-------------------ECONOMY---------------------"""
+
     def add_pmi(self, pmi_type, label=None, color=None):
         return self._add_series(
             lambda r: government(self.from_macro).pmi(r),
             pmi_type,
             label,
             color,
-
         )
-    
+
     def add_passenger_transport(self, transport_type, label=None, color=None):
         return self._add_series(
             lambda r: economy(self.from_macro).passenger_transport(r),
             transport_type,
             label,
             color,
-
         )
-    
+
     def add_retail_revenue_acc_raw(self, revenue_type, label=None, color=None):
         return self._add_series(
             lambda r: economy(self.from_macro).retail_revenue_acc_raw(r),
             revenue_type,
             label,
             color,
-
         )
-    
+
     def add_retail_revenue_acc_yoy(self, revenue_type, label=None, color=None):
         return self._add_series(
             lambda r: economy(self.from_macro).retail_revenue_acc_yoy(r),
             revenue_type,
             label,
             color,
-
         )
-    
+
     def add_retail_revenue_raw(self, gdp, label=None, color=None):
         return self._add_series(
             lambda r: economy(self.from_macro).retail_revenue_raw(r),
@@ -269,7 +343,7 @@ class combinechart:
             label,
             color,
         )
-    
+
     def add_retail_revenue_yoy(self, gdp, label=None, color=None):
         return self._add_series(
             lambda r: economy(self.from_macro).retail_revenue_yoy(r),
@@ -277,7 +351,7 @@ class combinechart:
             label,
             color,
         )
-    
+
     def add_cpi(self, gdp, label=None, color=None):
         return self._add_series(
             lambda r: economy(self.from_macro).cpi(r),
@@ -285,7 +359,7 @@ class combinechart:
             label,
             color,
         )
-    
+
     def add_cpi_mom(self, gdp, label=None, color=None):
         return self._add_series(
             lambda r: economy(self.from_macro).cpi_mom(r),
@@ -293,7 +367,7 @@ class combinechart:
             label,
             color,
         )
-    
+
     def add_cpi_yoy(self, gdp, label=None, color=None):
         return self._add_series(
             lambda r: economy(self.from_macro).cpi_yoy(r),
@@ -309,7 +383,7 @@ class combinechart:
             label,
             color,
         )
-    
+
     def add_gdp_real_raw(self, gdp, label=None, color=None):
         return self._add_series(
             lambda r: economy(self.from_macro).gdp_real_raw(r),
@@ -325,7 +399,7 @@ class combinechart:
             label,
             color,
         )
-    
+
     def add_gdp_real_acc_yoy(self, gdp, label=None, color=None):
         return self._add_series(
             lambda r: economy(self.from_macro).gdp_real_acc_yoy(r),
@@ -341,7 +415,7 @@ class combinechart:
             label,
             color,
         )
-    
+
     def add_gdp_nominal(self, gdp, label=None, color=None):
         return self._add_series(
             lambda r: economy(self.from_macro).gdp_nominal(r),
@@ -349,7 +423,7 @@ class combinechart:
             label,
             color,
         )
-    
+
     def add_gdp_nominal_raw(self, gdp, label=None, color=None):
         return self._add_series(
             lambda r: economy(self.from_macro).gdp_nominal_raw(r),
@@ -357,7 +431,7 @@ class combinechart:
             label,
             color,
         )
-    
+
     def add_gdp_nominal_acc_yoy(self, gdp, label=None, color=None):
         return self._add_series(
             lambda r: economy(self.from_macro).gdp_nominal_acc_yoy(r),
@@ -365,7 +439,7 @@ class combinechart:
             label,
             color,
         )
-    
+
     def add_gdp_nominal_acc_raw(self, gdp, label=None, color=None):
         return self._add_series(
             lambda r: economy(self.from_macro).gdp_nominal_acc_raw(r),
@@ -489,6 +563,7 @@ class combinechart:
         )
 
     """-------------------FOREIGN---------------------"""
+
     def add_import_byproduct(self, product, label=None, color=None):
         return self._add_series(
             lambda r: foreign(self.from_macro).import_byproduct(r),
@@ -552,6 +627,7 @@ class combinechart:
 
         plt.setp(ax.get_xticklabels(), rotation=45, ha="right")
         ax.xaxis.set_major_locator(ticker.MaxNLocator(nbins=10))
+
     def plot(self, save_path="None"):
         if not self.data_list:
             raise ValueError("Chưa có dữ liệu để vẽ.")
@@ -562,19 +638,20 @@ class combinechart:
 
         host.spines["left"].set_visible(False)
         host.yaxis.set_visible(False)
-        # định dạng giá trị 
+
+        # định dạng giá trị
         def auto_format(value, pos):
             if value == 0:
                 return "0"
             abs_value = abs(value)
             if abs_value >= 1e9:
-                return f"{value/1e9:.1f}B"  
+                return f"{value/1e9:.1f}B"
             elif abs_value >= 1e6:
-                return f"{value/1e6:.1f}M"  
+                return f"{value/1e6:.1f}M"
             elif abs_value >= 1e3:
-                return f"{value/1e3:.1f}K"  
+                return f"{value/1e3:.1f}K"
             return f"{value:.3f}"
-        
+
         axes = []
         for i, data in enumerate(self.data_list):
             ax = host.twinx()
@@ -582,18 +659,36 @@ class combinechart:
                 ax.spines["right"].set_position(("axes", 1 + 0.1 * i))
 
             color = self._resolve_color(data["color"])
-            #Shorten legend
+            # Shorten legend
             label = data["label"]
             if isinstance(label, str) and len(label) > 30:
                 label = label[:30] + "..."
-            ax.plot(
-                data["df"]["Date"],
-                data["df"]["Value"],
-                color=color,
-                label=data["label"],
-                linewidth=1,
-            )
-            
+
+            # Áp dụng làm mượt nếu được bật
+            if self.smooth_data:
+                smooth_dates, smooth_values = self._smooth_data_series(
+                    data["df"]["Date"], data["df"]["Value"]
+                )
+                ax.plot(
+                    smooth_dates,
+                    smooth_values,
+                    color=color,
+                    label=data["label"],
+                    linewidth=1.5,  # Làm dày hơn cho đường mượt
+                    alpha=0.8,
+                )
+                # Có thể thêm điểm gốc nếu muốn
+                # ax.scatter(data["df"]["Date"], data["df"]["Value"],
+                #           color=color, s=10, alpha=0.6, zorder=5)
+            else:
+                ax.plot(
+                    data["df"]["Date"],
+                    data["df"]["Value"],
+                    color=color,
+                    label=data["label"],
+                    linewidth=1,
+                )
+
             ax.yaxis.set_major_formatter(plt.FuncFormatter(auto_format))
             ax.tick_params(axis="y", labelcolor=color)
             # ax.set_ylabel(data["label"], color=color)
@@ -609,13 +704,13 @@ class combinechart:
                 lines.extend(lns)
                 labels.extend(lbls)
 
-            host.legend(lines, labels, loc='upper left', framealpha = 0.5)
+            host.legend(lines, labels, loc="upper left", framealpha=0.5)
 
         fig.tight_layout()
 
         saved_path = None
         if save_path is not None:
-            
+
             if os.path.isdir(save_path) or not os.path.splitext(save_path)[1]:
                 if not os.path.exists(save_path):
                     os.makedirs(save_path)
@@ -631,7 +726,7 @@ class combinechart:
         plt.close(fig)
 
         return saved_path
-   
+
     def plot_bar(self, save_path="None"):
         if not self.data_list:
             raise ValueError("Chưa có dữ liệu để vẽ.")
@@ -684,34 +779,37 @@ class combinechart:
         )
 
         def auto_format(value, pos):
-            if value == 0: return "0"
+            if value == 0:
+                return "0"
             abs_value = abs(value)
-            if abs_value >= 1e9: return f"{value/1e9:.1f}B"
-            elif abs_value >= 1e6: return f"{value/1e6:.1f}M"
-            elif abs_value >= 1e3: return f"{value/1e3:.1f}K"
+            if abs_value >= 1e9:
+                return f"{value/1e9:.1f}B"
+            elif abs_value >= 1e6:
+                return f"{value/1e6:.1f}M"
+            elif abs_value >= 1e3:
+                return f"{value/1e3:.1f}K"
             return f"{value:.1f}"
+
         for series_idx, data_item in enumerate(self.data_list):
             df = data_item["df"]
-            ax = host.twinx()  
+            ax = host.twinx()
 
             if len(plotted_axes) > 0:
                 ax.spines["right"].set_position(("axes", 1 + 0.1 * len(plotted_axes)))
 
             color = self._resolve_color(data_item["color"])
             # shorten legends
-            label = data_item['label']
+            label = data_item["label"]
             if isinstance(label, str) and len(label) > 30:
-                label = label[:30]+ "..."
-            x_numeric = mdates.date2num(
-                df["Date"]
-            )  
+                label = label[:30] + "..."
+            x_numeric = mdates.date2num(df["Date"])
 
             offset = (
                 series_idx - (num_series_to_plot - 1) / 2.0
             ) * individual_bar_width_data_units
 
             ax.bar(
-                x_numeric + offset,  
+                x_numeric + offset,
                 df["Value"],
                 width=individual_bar_width_data_units
                 * 0.95,  # Bar width (slightly less for small gap)
@@ -720,20 +818,20 @@ class combinechart:
             )
 
             ax.yaxis.set_major_formatter(FuncFormatter(auto_format))
-            ax.tick_params(axis='y', labelsize=8, labelcolor=color)
+            ax.tick_params(axis="y", labelsize=8, labelcolor=color)
             # ax.set_ylabel(data_item["label"], color=color)  # Set y-axis label
-            ax.spines["right"].set_color(color) 
-            ax.set_ylim(bottom=0)  
+            ax.spines["right"].set_color(color)
+            ax.set_ylim(bottom=0)
 
             plotted_axes.append(ax)
 
-        if not plotted_axes:  
+        if not plotted_axes:
             print("No data was plotted for the bar chart.")
             plt.close(fig)
             return None
 
-        self._setup_xaxis(host)  
-        
+        self._setup_xaxis(host)
+
         if all_unique_sorted_dates:
             padding_x = max(min_interval_days * 0.5, 0.5)
             host.set_xlim(
@@ -748,13 +846,13 @@ class combinechart:
                 lines.extend(lns)
                 labels.extend(lbls)
             if lines and labels:  # Check if legend items were successfully gathered
-                host.legend(lines, labels, loc='upper left', framealpha = 0.5)
+                host.legend(lines, labels, loc="upper left", framealpha=0.5)
 
         fig.tight_layout()
 
         saved_path = None
         if save_path is not None:
-            
+
             if os.path.isdir(save_path) or not os.path.splitext(save_path)[1]:
                 if not os.path.exists(save_path):
                     os.makedirs(save_path)
@@ -770,5 +868,6 @@ class combinechart:
         plt.close(fig)
 
         return saved_path
+
 
 # combinechart(timeframe="daily").add_interbank_vol("Doanh số kỳ hạn qua đêm").plot()

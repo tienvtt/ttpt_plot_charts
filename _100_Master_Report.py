@@ -114,22 +114,29 @@ class master_report:
                         f">> {key}: {target_range}\nParas: {[cell.left, cell.top, cell.width, cell.height]}"
                     )
 
-                    # crop_image_path = f"P:\\Tu_Van_KHCN\\Master_Research\\Temp\\{datetime.now().strftime('%Y%m%d_%H%M%S_%f')}.jpg"
-                    # image_ratio = cell.height/cell.width
-                    # with Image.open(image_path) as image_obj:
-                    # 	width, height = image_obj.size
-                    # 	w = 1; h = w*image_ratio
-                    # 	while w<width and h<height:
-                    # 		w += 1; h = w*image_ratio
-                    # 	x, y = (width - w)//2, (height - h)//2
-                    # 	image_obj.crop((x, y, x + w, y + h)).convert("RGB").save(crop_image_path)
+                    # Điều chỉnh tỷ lệ hình ảnh
+                    with Image.open(image_path) as img:
+                        img_width, img_height = img.size
+                        cell_ratio = cell.height / cell.width
+                        img_ratio = img_height / img_width
+
+                        if img_ratio > cell_ratio:
+                            # Hình ảnh cao hơn vùng ô -> điều chỉnh chiều cao
+                            new_height = cell.height
+                            new_width = new_height / img_ratio
+                        else:
+                            # Hình ảnh rộng hơn vùng ô -> điều chỉnh chiều rộng
+                            new_width = cell.width
+                            new_height = new_width * img_ratio
 
                     picture = ws.pictures.add(
                         image_path,
-                        left=cell.left,
-                        top=cell.top,
-                        width=cell.width,
-                        height=cell.height,
+                        left=cell.left
+                        + (cell.width - new_width) / 2,  # Căn giữa theo chiều ngang
+                        top=cell.top
+                        + (cell.height - new_height) / 2,  # Căn giữa theo chiều dọc
+                        width=new_width,
+                        height=new_height,
                     )
                     time.sleep(1)
                     ws.api.Shapes(picture.name).ZOrder(1)

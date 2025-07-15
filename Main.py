@@ -53,7 +53,9 @@ if __name__ == "__main__":
         xlsx_prompt_path=get_path(
             "Database", "XLSX_Template", "202507xx_macro_report_prompt.xlsx"
         ),
-        input_dict={"data_name": "SSI STRATEGY - Nhìn xa trông rộng"},
+        input_dict={
+            "data_name": "POW IR_NEWS - Tình hình sản xuất kinh doanh T2-2025 và kế hoạch T3-2025"
+        },
     )
 
     pass

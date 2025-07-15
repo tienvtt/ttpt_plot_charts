@@ -31,6 +31,8 @@ from PIL import Image
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import matplotlib.ticker as ticker
+from scipy import interpolate
+
 # # WEB DEPENDENCIES
 # from selenium import webdriver
 # from selenium.webdriver.support import expected_conditions as EC

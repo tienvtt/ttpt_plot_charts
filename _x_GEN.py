@@ -265,8 +265,6 @@ class GEN:
             return None
 
 
-
-
 # for key, value in GEN().get_all_macro_types().items():
 #     print(f"{key}: {str(value)[0:100]}")
 # print(GEN().text(data_name="BSC MACRO - Cập nhật diễn biến cuộc chiến thuế quan 2025"))
