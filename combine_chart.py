@@ -639,7 +639,7 @@ class combinechart:
         host.spines["left"].set_visible(False)
         host.yaxis.set_visible(False)
 
-        # định dạng giá trị
+        
         def auto_format(value, pos):
             if value == 0:
                 return "0"

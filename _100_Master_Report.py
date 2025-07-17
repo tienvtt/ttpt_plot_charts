@@ -115,6 +115,8 @@ class master_report:
                     )
 
                     # Điều chỉnh tỷ lệ hình ảnh
+                    if image_path == None:
+                        continue
                     with Image.open(image_path) as img:
                         img_width, img_height = img.size
                         cell_ratio = cell.height / cell.width
