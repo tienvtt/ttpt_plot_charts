@@ -31,6 +31,7 @@ from PIL import Image
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import matplotlib.ticker as ticker
+import matplotlib.font_manager as fm
 from scipy import interpolate
 
 # # WEB DEPENDENCIES

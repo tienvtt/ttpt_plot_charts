@@ -115,30 +115,28 @@ class master_report:
                     )
 
                     # Điều chỉnh tỷ lệ hình ảnh
-                    if image_path == None:
-                        continue
-                    with Image.open(image_path) as img:
-                        img_width, img_height = img.size
-                        cell_ratio = cell.height / cell.width
-                        img_ratio = img_height / img_width
+                    # if image_path == None:
+                    #     continue
+                    # with Image.open(image_path) as img:
+                    #     img_width, img_height = img.size
+                    #     cell_ratio = cell.height / cell.width
+                    #     img_ratio = img_height / img_width
 
-                        if img_ratio > cell_ratio:
-                            # Hình ảnh cao hơn vùng ô -> điều chỉnh chiều cao
-                            new_height = cell.height
-                            new_width = new_height / img_ratio
-                        else:
-                            # Hình ảnh rộng hơn vùng ô -> điều chỉnh chiều rộng
-                            new_width = cell.width
-                            new_height = new_width * img_ratio
+                    #     if img_ratio > cell_ratio:
+                    #         # Hình ảnh cao hơn vùng ô -> điều chỉnh chiều cao
+                    #         new_height = cell.height
+                    #         new_width = new_height / img_ratio
+                    #     else:
+                    #         # Hình ảnh rộng hơn vùng ô -> điều chỉnh chiều rộng
+                    #         new_width = cell.width
+                    #         new_height = new_width * img_ratio
 
                     picture = ws.pictures.add(
                         image_path,
-                        left=cell.left
-                        + (cell.width - new_width) / 2,  # Căn giữa theo chiều ngang
-                        top=cell.top
-                        + (cell.height - new_height) / 2,  # Căn giữa theo chiều dọc
-                        width=new_width,
-                        height=new_height,
+                        left=cell.left,
+                        top=cell.top,
+                        width=cell.width,
+                        height=cell.height,
                     )
                     time.sleep(1)
                     ws.api.Shapes(picture.name).ZOrder(1)
@@ -167,7 +165,7 @@ class master_report:
 
     def create_pdf_file(self):
         if self.xlsx_path and os.path.exists(self.xlsx_path):
-            app = xw.App(visible=False)
+            app = xw.App(visible=True)
             wb = app.books.open(self.xlsx_path)
             pdf_paths = []
             for idx, ws in enumerate(wb.sheets):

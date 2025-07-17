@@ -107,7 +107,6 @@ class GEN:
     def get_all_macro_types(self):
         macro_types = ["stockprice", "foreign", "finance", "economy", "government"]
         result = {}
-
         for macro in macro_types:
             records = db.importing_objs(macro)
             if records is None or len(records) == 0:
@@ -144,34 +143,10 @@ class GEN:
 
         return result
 
-    # def get_input_url(self, data_name):
-    #     records = db.importing_objs("analysis_report", data_name=data_name)
-    #     if len(records) == 0:
-    #         print(f"No data for {data_name}")
-    #         return None
-    #     for record in records:
-    #         url = record.data_dict.get("URL")
-    #         if not url:
-    #             print("No url found for {data_name}")
-    #             continue
-    #         return url
-    #     return None
-
     def text(self, model_name="gpt-4.1-nano", **kwargs):
         begin = datetime.now()
         self.gen_text = ""
         self.prompt_len = 0
-
-        # input_url = kwargs.get("input_url", None)
-        # data_name = kwargs.get("data_name", None)
-
-        # Nếu chỉ có data_name, lấy input_url từ GEN().get_input_url()
-        # if not input_url and data_name:
-        #     input_url = self.get_input_url(data_name)
-
-        # Nếu cả input_url và data_name đều không có, báo lỗi
-        # if not input_url:
-        #     raise ValueError("Thiếu input_url hoặc data_name.")
 
         macro_metadata = kwargs.get("macro_metadata", None)
         if not macro_metadata:
@@ -188,6 +163,7 @@ class GEN:
             "- from_macro: None\n"
             "- to_macro: None\n"
             "- timeframe: daily, monthly, quarterly hoặc yearly (chọn timeframe phù hợp dựa trên các chi tiết phân tích trong bài bài cáo cáo, đối với stock thì nên lấy daily)\n"
+            "- title: tên biểu đồ, dựa trên series được vẽ\n"
             "- series: là một list, mỗi phần tử là một dict gồm:\n"
             "   - func_name: tên hàm sẽ gọi trong combinechart (ví dụ: add_stock, add_cpi, ...)\n"
             "   - args: tham số truyền vào, phải hợp lệ với func_name dựa trên metadata\n"
@@ -204,12 +180,10 @@ class GEN:
         Nếu không tìm thấy bất kỳ args nào hợp lệ với func_name dựa trên metadata, không sinh ra object đó trong list kết quả.
         Hãy trích xuất thông tin biểu đồ phù hợp dưới dạng JSON đúng cấu trúc như đã mô tả. Các dữ liệu trong series phải có trong metadata.
         """
-
-        # input_text = extract_text_from_pdf_url(input_url)
         system_prompt = kwargs.get("system_prompt", default_system_prompt)
         user_prompt = kwargs.get("user_prompt", default_user_prompt)
-
         client = openai.OpenAI(api_key=os.getenv("openai.api_key"))
+
         try:
             response = client.chat.completions.create(
                 model=model_name.replace("_paid", ""),
@@ -224,28 +198,19 @@ class GEN:
         except Exception as error:
             print(f"\n> GEN Text error: {error}")
             self.gen_text = f"error: {error}"
-            return None  # Trả về None khi có lỗi
-
-        # Nếu không phải prompt mặc định, trả về văn bản thô
+            return None  
+        
         if not is_default_prompt:
             return self.gen_text
-
-        # Phần xử lý JSON khi sử dụng prompt mặc định
-        # if self.gen_text.strip() == "NO_MATCH":
-        #     return None
 
         content_cleaned = re.sub(
             r"^```json\s*|\s*```$", "", self.gen_text.strip(), flags=re.MULTILINE
         )
         try:
             parsed = json.loads(content_cleaned)
-
-            # Xử lý trường hợp đầu ra là mảng JSON objects
             if isinstance(parsed, list):
                 if not parsed:
                     return None
-
-                # Xử lý mảng - lấy phần tử đầu tiên
                 filtered = []
                 seen = set()
                 for item in parsed:
@@ -257,11 +222,8 @@ class GEN:
                         func_name = s.get("func_name", "")
                         if not func_name.startswith("add_"):
                             s["func_name"] = "add_" + func_name
-
                     if not item["series"]:
                         continue
-
-                    # Remove duplicate func_name + args
                     for s in item["series"]:
                         key = (
                             s["func_name"],
@@ -276,28 +238,19 @@ class GEN:
                         seen.add(key)
                     else:
                         filtered.append(item)
-
-                # Trả về phần tử đầu tiên sau khi lọc
                 return filtered[0] if filtered else None
 
-            # Xử lý trường hợp đầu ra là JSON object đơn lẻ
             if isinstance(parsed, dict) and parsed.get("series"):
                 parsed["series"] = [
                     s for s in parsed.get("series", []) if s.get("args")
                 ]
-
-                # Chuẩn hóa func_name
                 for s in parsed["series"]:
                     func_name = s.get("func_name", "")
                     if not func_name.startswith("add_"):
                         s["func_name"] = "add_" + func_name
-
                 if not parsed["series"]:
                     return None
-
-                # Trả về JSON object sau khi xử lý
                 return parsed
-
             return None
 
         except Exception as e:

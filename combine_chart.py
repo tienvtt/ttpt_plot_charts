@@ -611,7 +611,7 @@ class combinechart:
             ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m-%d"))
         elif self.timeframe == "monthly":
             ax.xaxis.set_major_locator(mdates.MonthLocator(interval=1))
-            ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m"))
+            ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y_%m"))
         elif self.timeframe == "quarterly":
             ax.xaxis.set_major_locator(mdates.MonthLocator(bymonth=[1, 4, 7, 10]))
 
@@ -628,18 +628,25 @@ class combinechart:
         plt.setp(ax.get_xticklabels(), rotation=45, ha="right")
         ax.xaxis.set_major_locator(ticker.MaxNLocator(nbins=10))
 
-    def plot(self, save_path="None"):
+    def plot(self, save_path="None", width=None, height=None, dpi=100):
         if not self.data_list:
             raise ValueError("Chưa có dữ liệu để vẽ.")
 
-        fig, host = plt.subplots(figsize=(12, 6))
+        # width, height là point -> chuyển sang inch
+        if width is not None and height is not None:
+            width_inch = width / 72
+            height_inch = height / 72
+        else:
+            width_inch = 12
+            height_inch = 6
+
+        fig, host = plt.subplots(figsize=(width_inch, height_inch), dpi=dpi)
         fig.subplots_adjust(right=0.75)
         host.set_title(self.title)
 
         host.spines["left"].set_visible(False)
         host.yaxis.set_visible(False)
 
-        
         def auto_format(value, pos):
             if value == 0:
                 return "0"
@@ -677,9 +684,7 @@ class combinechart:
                     linewidth=1.5,  # Làm dày hơn cho đường mượt
                     alpha=0.8,
                 )
-                # Có thể thêm điểm gốc nếu muốn
-                # ax.scatter(data["df"]["Date"], data["df"]["Value"],
-                #           color=color, s=10, alpha=0.6, zorder=5)
+
             else:
                 ax.plot(
                     data["df"]["Date"],
@@ -706,7 +711,7 @@ class combinechart:
 
             host.legend(lines, labels, loc="upper left", framealpha=0.5)
 
-        fig.tight_layout()
+        fig.tight_layout(pad=0)  # Không để pad dư
 
         saved_path = None
         if save_path is not None:
@@ -720,21 +725,33 @@ class combinechart:
 
                 saved_path = save_path
 
-            fig.savefig(saved_path, dpi=300, bbox_inches="tight")
+            fig.savefig(saved_path, dpi=100, bbox_inches="tight", pad_inches=0)
             print(f"Hình ảnh đã được lưu tại {saved_path}")
 
         plt.close(fig)
 
         return saved_path
 
-    def plot_bar(self, save_path="None"):
+    def plot_bar(self, save_path="None", width=None, height=None, dpi=72):
         if not self.data_list:
             raise ValueError("Chưa có dữ liệu để vẽ.")
 
-        fig, host = plt.subplots(figsize=(12, 6))
+        import os
+        import gc
+
+        plt.close("all")
+        gc.collect()
+
+        if width and height:
+            width_inch = width / dpi
+            height_inch = height / dpi
+        else:
+            width_inch = 12
+            height_inch = 6
+
+        fig, host = plt.subplots(figsize=(width_inch, height_inch), dpi=dpi)
         fig.subplots_adjust(right=0.75)
         host.set_title(self.title)
-
         host.spines["left"].set_visible(False)
         host.yaxis.set_visible(False)
 
@@ -798,7 +815,6 @@ class combinechart:
                 ax.spines["right"].set_position(("axes", 1 + 0.1 * len(plotted_axes)))
 
             color = self._resolve_color(data_item["color"])
-            # shorten legends
             label = data_item["label"]
             if isinstance(label, str) and len(label) > 30:
                 label = label[:30] + "..."
@@ -811,8 +827,7 @@ class combinechart:
             ax.bar(
                 x_numeric + offset,
                 df["Value"],
-                width=individual_bar_width_data_units
-                * 0.95,  # Bar width (slightly less for small gap)
+                width=individual_bar_width_data_units * 0.95,
                 color=color,
                 label=data_item["label"],
             )
@@ -852,21 +867,19 @@ class combinechart:
 
         saved_path = None
         if save_path is not None:
-
             if os.path.isdir(save_path) or not os.path.splitext(save_path)[1]:
                 if not os.path.exists(save_path):
                     os.makedirs(save_path)
                 filename = datetime.now().strftime("BarChart_%Y%m%d_%H%M%S.jpg")
                 saved_path = os.path.join(save_path, filename)
             else:
-
                 saved_path = save_path
 
-            fig.savefig(saved_path, dpi=300, bbox_inches="tight")
+            fig.savefig(saved_path, dpi=dpi, bbox_inches="tight")
             print(f"Hình ảnh đã được lưu tại {saved_path}")
 
         plt.close(fig)
-
+        gc.collect()
         return saved_path
 
 
