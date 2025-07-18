@@ -640,7 +640,7 @@ class combinechart:
             width_inch = 12
             height_inch = 6
 
-        fig, host = plt.subplots(figsize=(width_inch, height_inch), dpi=dpi)
+        fig, host = plt.subplots(figsize=(width / dpi, height / dpi), dpi=dpi)
         fig.subplots_adjust(right=0.75)
         host.set_title(self.title)
 

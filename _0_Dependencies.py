@@ -32,6 +32,9 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import matplotlib.ticker as ticker
 import matplotlib.font_manager as fm
+import matplotlib
+
+matplotlib.use("Agg")
 from scipy import interpolate
 
 # # WEB DEPENDENCIES

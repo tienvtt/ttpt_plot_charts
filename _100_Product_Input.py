@@ -45,7 +45,7 @@ class macro_report:
         self.data_name = self.input_dict.get("data_name", None)
         self.input_url = self.input_dict.get("input_url", None)
 
-        self.get_data_input_dict()
+        # self.get_data_input_dict()
 
         self.input_dict.update(
             {
@@ -149,15 +149,37 @@ class macro_report:
                 self.input_dict[f"text_{i+1}_body"] = ""
 
     def get_prompt_input_dict(self):
-        import pandas as pd
-
         self.xlsx_prompt_path = (
             self.kwargs["xlsx_prompt_path"]
             if "xlsx_prompt_path" in self.kwargs
             else None
         )
-        if self.xlsx_prompt_path and os.path.exists(self.xlsx_prompt_path):
-            df = pd.read_excel(self.xlsx_prompt_path, sheet_name="prompt")
+        # if self.xlsx_prompt_path and os.path.exists(self.xlsx_prompt_path):
+        #     df = pd.read_excel(self.xlsx_prompt_path, sheet_name="prompt")
+        #     for index, row_df in df.iterrows():
+        #         print(f"GEN: {row_df['prompt_code']}")
+        #         prompt = row_df["prompt"]
+        #         for key, value in self.data_dict.items():
+        #             prompt = prompt.replace("{" + key + "}", f"{value}")
+        #         self.input_dict[row_df["prompt_code"]] = GEN().text(prompt=prompt)
+
+        if self.xlsx_prompt_path:
+            if "docs.google.com" in self.xlsx_prompt_path:
+                match = re.search(r"/d/([a-zA-Z0-9-_]+)", self.xlsx_prompt_path)
+                if match:
+                    sheet_id = match.group(1)
+                    sheet_name = "prompt"
+                    csv_url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet={sheet_name}"
+                    df = pd.read_csv(csv_url)
+                else:
+                    print("Cannot Sheet ID")
+                    return
+            elif os.path.exists(self.xlsx_prompt_path):
+                df = pd.read_excel(self.xlsx_prompt_path, sheet_name= "prompt")
+            else:
+                print("Không tìm thấy file hoặc link hợp lệ.")
+                return
+            
             for index, row_df in df.iterrows():
                 print(f"GEN: {row_df['prompt_code']}")
                 prompt = row_df["prompt"]
@@ -165,8 +187,8 @@ class macro_report:
                     prompt = prompt.replace("{" + key + "}", f"{value}")
                 self.input_dict[row_df["prompt_code"]] = GEN().text(prompt=prompt)
 
-    def chart_1(self, width=None, height=None):
 
+    def chart_1(self, width=None, height=None):
         font_prop = fm.FontProperties(fname=self.chart_text_font_path, size=self.chart_text_size)
         fm.fontManager.addfont(self.chart_text_font_path)
         plt.rcParams.update(
@@ -218,11 +240,11 @@ class macro_report:
                 print(f"Type of args: {type(args)}, Content: {args}")
 
         try:
-            chart.plot(save_path=image_path,width=width, height=height)
+            chart.plot(save_path=image_path,width=width*3, height=height*3)
             print(f"Chart 1 saved successfully to {image_path}")
             return image_path
         except Exception as e:
-            print(f"Chart 1 failed: {e}")
+            print(f"Chart 1 failed: {e} ")
             return r"E:\6_Master_Report\Database\Temp\20250715_160826_465934_chart.jpg"
 
     def chart_2(self, width=None, height=None):
@@ -481,3 +503,21 @@ class macro_report:
         except Exception as e:
             print(f"Chart 5 failed: {e}")
             return r"E:\6_Master_Report\Database\Temp\20250715_160826_465934_chart.jpg"
+
+
+data_dict = {
+    "company": "TCB",
+    "year": "2025"
+}
+
+report = macro_report(
+    data_dict=data_dict,
+    xlsx_prompt_path="https://docs.google.com/spreadsheets/d/1LpysgrwOf1oV-snEJaTzyL8XnEK0aHenqGz6w0neDQY/edit?gid=0#gid=0",
+)
+
+report.get_prompt_input_dict()
+# print(report.input_dict)
+
+for key, value in report.input_dict.items():
+    print(f"{key}: {value}")
+
